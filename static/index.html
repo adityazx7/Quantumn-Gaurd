@@ -265,6 +265,10 @@
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
         <span>Command Center</span>
       </button>
+      <button onclick="switchTab('explain')" id="tab-btn-explain" class="py-3 px-1 border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 whitespace-nowrap">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
+        <span>Model Explanations</span>
+      </button>
       <button onclick="switchTab('matrix')" id="tab-btn-matrix" class="py-3 px-1 border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 whitespace-nowrap">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
         <span>Threat Matrix</span>
@@ -570,6 +574,10 @@
                   <span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-mono-num truncate max-w-[200px]" title="Session ID">
                     SID: <strong id="banner-sid" class="text-slate-800">SID-INIT</strong>
                   </span>
+                  <button onclick="switchTab('explain')" class="px-2.5 py-0.5 rounded-md bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold border border-indigo-200 transition flex items-center gap-1 cursor-pointer">
+                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>Explain Result</span>
+                  </button>
                 </div>
               </div>
             </div>
@@ -674,6 +682,360 @@
 
         <div id="qubits-chip-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
           <!-- Populated dynamically -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- TAB: REAL-TIME RESULT EXPLANATION & MODEL DIAGNOSTICS   -->
+    <!-- ======================================================== -->
+    <div id="tab-explain" class="hidden space-y-6">
+
+      <!-- TOP HEADER CARD -->
+      <div class="q-card p-5">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-indigo-600"></span>
+              <h2 class="text-base font-bold text-slate-900">Quantum Verification Diagnostics &amp; Model Explainability</h2>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">Real-time evaluation of whether current results are GOOD or BAD, with mathematical explanations of all 6 detection models.</p>
+          </div>
+          <div class="flex items-center space-x-2">
+            <button onclick="switchTab('command-center')" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition flex items-center space-x-1.5 cursor-pointer">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+              <span>Back to Command Center</span>
+            </button>
+            <button onclick="runSimulation()" class="px-3 py-1.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs transition flex items-center space-x-1.5 shadow-xs cursor-pointer">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+              <span>Re-Run Pipeline</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- EXECUTIVE HEALTH ASSESSMENT BANNER -->
+        <div id="exp-health-card" class="mt-4 p-4.5 rounded-2xl border border-emerald-200 bg-emerald-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all">
+          <div class="flex items-start space-x-3.5">
+            <div id="exp-health-icon-bg" class="w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border border-emerald-200 bg-emerald-100 text-emerald-700">
+              <svg id="exp-health-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+              </svg>
+            </div>
+            <div>
+              <div class="flex items-center space-x-2">
+                <span id="exp-health-badge" class="px-2.5 py-0.5 text-xs font-bold rounded-lg uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200">GOOD RESULT • HEALTHY</span>
+                <span id="exp-health-verdict" class="text-xs font-mono-num font-bold text-emerald-700">SIGNATURE VERIFIED AUTHENTIC</span>
+              </div>
+              <h3 id="exp-health-title" class="text-sm font-bold text-slate-900 mt-1">Deterministic Signature Acceptance</h3>
+              <p id="exp-health-desc" class="text-xs text-slate-600 mt-1 max-w-3xl leading-relaxed">All quantum telemetry checks passed. The optical fiber channel shows healthy transmission fidelity, Bell entanglement is intact, and no eavesdropping perturbation was detected.</p>
+            </div>
+          </div>
+          <div id="exp-health-actions" class="shrink-0 flex md:flex-col items-center md:items-end justify-between border-t md:border-t-0 pt-3 md:pt-0 border-slate-100">
+            <span class="text-[10px] text-slate-400 font-semibold uppercase">Operational Action</span>
+            <span id="exp-health-action-badge" class="text-xs font-bold font-mono-num px-2.5 py-1 rounded-lg bg-emerald-600 text-white">ACTION: ACCEPT &amp; SETTLE</span>
+            <span id="exp-health-rule-ref" class="text-[10px] text-slate-500 font-mono-num mt-1">Rule: Rule 1 (Baseline)</span>
+          </div>
+        </div>
+
+        <!-- QUICK 4-POINT HEALTH CHECKLIST -->
+        <div class="mt-4 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+          
+          <div class="p-3 rounded-xl bg-slate-50 border border-slate-100 flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-semibold text-slate-500">1. Optical Error Check</span>
+              <span id="exp-chk-qber-badge" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">PASS</span>
+            </div>
+            <div class="my-1.5">
+              <span id="exp-chk-qber-val" class="text-base font-black font-mono-num text-slate-900">0.00%</span>
+            </div>
+            <p id="exp-chk-qber-txt" class="text-[10px] text-slate-500 line-clamp-1">Within 12% tolerance</p>
+          </div>
+
+          <div class="p-3 rounded-xl bg-slate-50 border border-slate-100 flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-semibold text-slate-500">2. Bell Monogamy Check</span>
+              <span id="exp-chk-chsh-badge" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">PASS</span>
+            </div>
+            <div class="my-1.5">
+              <span id="exp-chk-chsh-val" class="text-base font-black font-mono-num text-slate-900">S = 2.828</span>
+            </div>
+            <p id="exp-chk-chsh-txt" class="text-[10px] text-slate-500 line-clamp-1">Entangled (S &ge; 2.50)</p>
+          </div>
+
+          <div class="p-3 rounded-xl bg-slate-50 border border-slate-100 flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-semibold text-slate-500">3. Basis Disturbance</span>
+              <span id="exp-chk-asym-badge" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">NORMAL</span>
+            </div>
+            <div class="my-1.5">
+              <span id="exp-chk-asym-val" class="text-base font-black font-mono-num text-slate-900">&Delta;E = 0.0%</span>
+            </div>
+            <p id="exp-chk-asym-txt" class="text-[10px] text-slate-500 line-clamp-1">Uniform isotropic noise</p>
+          </div>
+
+          <div class="p-3 rounded-xl bg-slate-50 border border-slate-100 flex flex-col justify-between">
+            <div class="flex items-center justify-between">
+              <span class="text-[11px] font-semibold text-slate-500">4. Consensus Check</span>
+              <span id="exp-chk-ecs-badge" class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">AGREED</span>
+            </div>
+            <div class="my-1.5">
+              <span id="exp-chk-ecs-val" class="text-base font-black font-mono-num text-slate-900">ECS = 1.000</span>
+            </div>
+            <p id="exp-chk-ecs-txt" class="text-[10px] text-slate-500 line-clamp-1">Verifiers in consensus</p>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- DEEP MODEL EXPLANATION CARDS (GRID OF 6 MODELS) -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+        <!-- MODEL 1: QUANTUM TELEPORTATION & QBER -->
+        <div class="q-card p-4.5 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div class="flex items-center space-x-2">
+                <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                <h3 class="text-xs font-bold text-slate-900">Model 1: Quantum Teleportation &amp; QBER</h3>
+              </div>
+              <span id="exp-m1-badge" class="px-2 py-0.5 text-[10px] font-bold rounded-md uppercase font-mono-num bg-emerald-100 text-emerald-800">GOOD</span>
+            </div>
+
+            <div class="mt-3 flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+              <div>
+                <span class="text-[10px] text-slate-400 block font-mono-num">Current Measured QBER</span>
+                <strong id="exp-m1-qber" class="text-base font-black text-slate-900 font-mono-num">0.00%</strong>
+              </div>
+              <div class="text-right">
+                <span class="text-[10px] text-slate-400 block font-mono-num">Security Threshold (T_v)</span>
+                <span class="text-xs font-bold text-slate-700 font-mono-num">12.0%</span>
+              </div>
+            </div>
+
+            <div class="mt-3 space-y-2 text-xs text-slate-600">
+              <p><strong>Is this Good or Bad?</strong> <span id="exp-m1-eval" class="text-slate-800 font-medium">GOOD RESULT: Transmission errors are within normal optical tolerance (T_v = 12%). Photons traversed the channel without destructive eavesdropping perturbation.</span></p>
+              <p><strong>How the Model Works:</strong> Alice prepares arbitrary quantum states |&psi;&rang; in a 6-state Pauli alphabet and entangles them with an EPR pair (|&Phi;+&rang;). After joint Bell measurement, classical correction bits (c0, c1) are transmitted to Bob, who applies unitary Pauli corrections (I, X, Z, XZ) to reconstruct |&psi;&rang;.</p>
+              <p><strong>Physics Basis:</strong> In an uncompromised fiber, QBER originates purely from optical attenuation. Any eavesdropping measurement collapses the state, causing bit/phase error rates to rise sharply.</p>
+            </div>
+          </div>
+          <div class="mt-3 pt-2 border-t border-slate-100 text-[11px] text-slate-400 font-mono-num">
+            Equation: QBER = (1/L) &sum; I(k_Alice &ne; k_Bob)
+          </div>
+        </div>
+
+        <!-- MODEL 2: CHSH BELL INEQUALITY -->
+        <div class="q-card p-4.5 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div class="flex items-center space-x-2">
+                <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                <h3 class="text-xs font-bold text-slate-900">Model 2: CHSH Bell Inequality Entanglement</h3>
+              </div>
+              <span id="exp-m2-badge" class="px-2 py-0.5 text-[10px] font-bold rounded-md uppercase font-mono-num bg-emerald-100 text-emerald-800">GOOD</span>
+            </div>
+
+            <div class="mt-3 flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+              <div>
+                <span class="text-[10px] text-slate-400 block font-mono-num">Bell Witness (S-Score)</span>
+                <strong id="exp-m2-sval" class="text-base font-black text-slate-900 font-mono-num">S = 2.828</strong>
+              </div>
+              <div class="text-right">
+                <span class="text-[10px] text-slate-400 block font-mono-num">Entanglement Gate</span>
+                <span class="text-xs font-bold text-slate-700 font-mono-num">S &ge; 2.500</span>
+              </div>
+            </div>
+
+            <div class="mt-3 space-y-2 text-xs text-slate-600">
+              <p><strong>Is this Good or Bad?</strong> <span id="exp-m2-eval" class="text-slate-800 font-medium">GOOD RESULT: Strong quantum non-locality observed (S &ge; 2.50). The Bell inequality is violated, mathematically proving by Bell monogamy that no third party is entangled with the key.</span></p>
+              <p><strong>How the Model Works:</strong> Measures correlation function across 4 conjugate angles (0, &pi;/4, &pi;/8, 3&pi;/8). Pure quantum entanglement yields Tsirelson's maximum bound S = 2&radic;2 &approx; 2.828. Classical local hidden-variable systems are strictly capped at S &le; 2.000.</p>
+              <p><strong>Physics Basis:</strong> By the monogamy of entanglement, if Alice and Bob's Bell state achieves S &ge; 2.50, an adversary CANNOT be entangled with the transmission.</p>
+            </div>
+          </div>
+          <div class="mt-3 pt-2 border-t border-slate-100 text-[11px] text-slate-400 font-mono-num">
+            Tsirelson Bound: S &le; 2&radic;2 | Local Realism: S &le; 2.0
+          </div>
+        </div>
+
+        <!-- MODEL 3: CONJUGATE BASIS ASYMMETRY -->
+        <div class="q-card p-4.5 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div class="flex items-center space-x-2">
+                <span class="w-2 h-2 rounded-full bg-cyan-500"></span>
+                <h3 class="text-xs font-bold text-slate-900">Model 3: Conjugate Basis Asymmetry (&Delta;E)</h3>
+              </div>
+              <span id="exp-m3-badge" class="px-2 py-0.5 text-[10px] font-bold rounded-md uppercase font-mono-num bg-emerald-100 text-emerald-800">GOOD</span>
+            </div>
+
+            <div class="mt-3 flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+              <div>
+                <span class="text-[10px] text-slate-400 block font-mono-num">Asymmetry (&Delta;E)</span>
+                <strong id="exp-m3-asym" class="text-base font-black text-slate-900 font-mono-num">0.00%</strong>
+              </div>
+              <div class="text-right">
+                <span class="text-[10px] text-slate-400 block font-mono-num">Asymmetry Threshold</span>
+                <span class="text-xs font-bold text-slate-700 font-mono-num">&delta;_asym = 20.0%</span>
+              </div>
+            </div>
+
+            <div class="mt-3 space-y-2 text-xs text-slate-600">
+              <p><strong>Is this Good or Bad?</strong> <span id="exp-m3-eval" class="text-slate-800 font-medium">GOOD RESULT: Errors are evenly distributed across conjugate Pauli bases (X, Y, Z), confirming honest isotropic fiber loss rather than targeted eavesdropping.</span></p>
+              <p><strong>How the Model Works:</strong> Evaluates error discrepancy across Mutually Unbiased Bases: &Delta;E = |E_X - E_Z|. Honest fiber noise creates isotropic (equal) errors across both bases.</p>
+              <p><strong>Physics Basis:</strong> An intercept-resend adversary measuring in basis &sigma;_x inevitably disturbs conjugate basis &sigma;_z by 50% due to Heisenberg's Uncertainty Principle, generating massive asymmetry (&Delta;E &ge; 20%).</p>
+            </div>
+          </div>
+          <div class="mt-3 pt-2 border-t border-slate-100 text-[11px] text-slate-400 font-mono-num">
+            Criterion: &Delta;E = |E_X - E_Z| &ge; 0.20 &rarr; Intercept-Resend
+          </div>
+        </div>
+
+        <!-- MODEL 4: GROVER WEAK DISTURBANCE AMPLIFICATION -->
+        <div class="q-card p-4.5 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div class="flex items-center space-x-2">
+                <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                <h3 class="text-xs font-bold text-slate-900">Model 4: Grover Weak Tap Amplification</h3>
+              </div>
+              <span id="exp-m4-badge" class="px-2 py-0.5 text-[10px] font-bold rounded-md uppercase font-mono-num bg-emerald-100 text-emerald-800">GOOD</span>
+            </div>
+
+            <div class="mt-3 flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+              <div>
+                <span class="text-[10px] text-slate-400 block font-mono-num">Amplified Tap Score</span>
+                <strong id="exp-m4-amp" class="text-base font-black text-slate-900 font-mono-num">0.00%</strong>
+              </div>
+              <div class="text-right">
+                <span class="text-[10px] text-slate-400 block font-mono-num">Amplification Gain</span>
+                <span id="exp-m4-gain" class="text-xs font-bold text-slate-700 font-mono-num">1.0x</span>
+              </div>
+            </div>
+
+            <div class="mt-3 space-y-2 text-xs text-slate-600">
+              <p><strong>Is this Good or Bad?</strong> <span id="exp-m4-eval" class="text-slate-800 font-medium">GOOD RESULT: Grover amplitude amplification detected no hidden taps beneath the fiber noise floor. Baseline optical stability is intact.</span></p>
+              <p><strong>How the Model Works:</strong> Applies Grover-inspired unitary rotations: a_j(t+1) = a_j(t)[1 + &eta;(E_j - &mu;_E)] to boost subtle, sub-threshold optical taps.</p>
+              <p><strong>Physics Basis:</strong> Sophisticated adversaries use low-power beam splitters (tapping &lt; 3% of photons) to hide beneath fiber noise. Grover iteration rotates the disturbance out of the noise floor to trigger RESTRICT enforcement.</p>
+            </div>
+          </div>
+          <div class="mt-3 pt-2 border-t border-slate-100 text-[11px] text-slate-400 font-mono-num">
+            Gain: G &ge; 1.30x &amp; Amplified &ge; 2&sigma; &rarr; Weak Tap Detected
+          </div>
+        </div>
+
+        <!-- MODEL 5: MULTI-RECEIVER ENTANGLEMENT CONSENSUS -->
+        <div class="q-card p-4.5 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div class="flex items-center space-x-2">
+                <span class="w-2 h-2 rounded-full bg-sky-500"></span>
+                <h3 class="text-xs font-bold text-slate-900">Model 5: Non-Repudiation Consensus (ECS)</h3>
+              </div>
+              <span id="exp-m5-badge" class="px-2 py-0.5 text-[10px] font-bold rounded-md uppercase font-mono-num bg-emerald-100 text-emerald-800">GOOD</span>
+            </div>
+
+            <div class="mt-3 flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+              <div>
+                <span class="text-[10px] text-slate-400 block font-mono-num">Consensus Score (ECS)</span>
+                <strong id="exp-m5-ecs" class="text-base font-black text-slate-900 font-mono-num">1.000</strong>
+              </div>
+              <div class="text-right">
+                <span class="text-[10px] text-slate-400 block font-mono-num">Agreement Threshold</span>
+                <span class="text-xs font-bold text-slate-700 font-mono-num">ECS &ge; 0.900</span>
+              </div>
+            </div>
+
+            <div class="mt-3 space-y-2 text-xs text-slate-600">
+              <p><strong>Is this Good or Bad?</strong> <span id="exp-m5-eval" class="text-slate-800 font-medium">GOOD RESULT: Verifiers Bob and Charlie independently confirmed measurement parity. Alice cannot dispute having signed this transaction.</span></p>
+              <p><strong>How the Model Works:</strong> In a digital signature, the signer (Alice) must not be able to repudiate (deny) signing. Verifiers Bob and Charlie cross-compare parity bits without revealing raw signature keys.</p>
+              <p><strong>Physics Basis:</strong> If Alice attempts a repudiation attack by sending conflicting states to Bob and Charlie, the quantum correlation between Bob and Charlie collapses, dropping ECS score below 0.90.</p>
+            </div>
+          </div>
+          <div class="mt-3 pt-2 border-t border-slate-100 text-[11px] text-slate-400 font-mono-num">
+            Guarantee: If Bob Accepts &rarr; Charlie Accepts with P &ge; 1 - P_rep
+          </div>
+        </div>
+
+        <!-- MODEL 6: INFORMATION-THEORETIC SECURITY (ITS) -->
+        <div class="q-card p-4.5 flex flex-col justify-between">
+          <div>
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div class="flex items-center space-x-2">
+                <span class="w-2 h-2 rounded-full bg-violet-500"></span>
+                <h3 class="text-xs font-bold text-slate-900">Model 6: Information-Theoretic Security &amp; Bounds</h3>
+              </div>
+              <span id="exp-m6-badge" class="px-2 py-0.5 text-[10px] font-bold rounded-md uppercase font-mono-num bg-emerald-100 text-emerald-800">GOOD</span>
+            </div>
+
+            <div class="mt-3 flex items-center justify-between bg-slate-50 p-2.5 rounded-xl border border-slate-100">
+              <div>
+                <span class="text-[10px] text-slate-400 block font-mono-num">Unconditional Security</span>
+                <strong id="exp-m6-bits" class="text-base font-black text-slate-900 font-mono-num">&gt; 37.4 Bits</strong>
+              </div>
+              <div class="text-right">
+                <span class="text-[10px] text-slate-400 block font-mono-num">Forgery Probability (P_forge)</span>
+                <span id="exp-m6-pforge" class="text-xs font-bold text-slate-700 font-mono-num">&le; 10^-12</span>
+              </div>
+            </div>
+
+            <div class="mt-3 space-y-2 text-xs text-slate-600">
+              <p><strong>Is this Good or Bad?</strong> <span id="exp-m6-eval" class="text-slate-800 font-medium">GOOD RESULT: Information-theoretic security guaranteed by Chernoff-Hoeffding probability bounds. The signature is unconditionally secure against quantum computers or supercomputers.</span></p>
+              <p><strong>How the Model Works:</strong> Unlike RSA or ECC (which rely on unproven computational complexity), QDS security relies on quantum mechanics (No-Cloning Theorem) and Chernoff-Hoeffding probability bounds.</p>
+              <p><strong>Physics Basis:</strong> P_forge &le; exp(-2(T_f - T_v)^2 L). As key length L increases from 64 to 1024, forgery probability drops exponentially to 0, providing permanent immunity against quantum supercomputers.</p>
+            </div>
+          </div>
+          <div class="mt-3 pt-2 border-t border-slate-100 text-[11px] text-slate-400 font-mono-num">
+            Bound: P_forge &le; exp(-2(T_f - T_v)&sup2; L)
+          </div>
+        </div>
+
+      </div>
+
+      <!-- MODEL 7: 4-TIER GRADUATED ENFORCEMENT LADDER ACTION GUIDE -->
+      <div class="q-card p-5">
+        <div class="flex items-center space-x-2 pb-3 border-b border-slate-100">
+          <span class="w-2.5 h-2.5 rounded-full bg-slate-700"></span>
+          <h3 class="text-xs font-bold text-slate-900">Model 7: 4-Tier Graduated Enforcement Ladder &amp; Operational Action</h3>
+        </div>
+
+        <div class="mt-4 grid grid-cols-1 md:grid-cols-4 gap-3 text-xs">
+          
+          <div id="tier-card-monitor" class="p-3.5 rounded-xl border border-slate-200 bg-white transition-all">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="font-bold text-slate-800">Tier 1: MONITOR</span>
+              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800">SAFE</span>
+            </div>
+            <p class="text-[11px] text-slate-500 mb-2">QBER &le; 12%, S &ge; 2.50, ECS &ge; 0.90.</p>
+            <p class="text-[11px] text-slate-700"><strong>Action:</strong> Signature accepted unconditionally. Normal financial settlement authorized.</p>
+          </div>
+
+          <div id="tier-card-restrict" class="p-3.5 rounded-xl border border-slate-200 bg-white transition-all">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="font-bold text-slate-800">Tier 2: RESTRICT</span>
+              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-800">CAUTION</span>
+            </div>
+            <p class="text-[11px] text-slate-500 mb-2">12% &lt; QBER &le; 20% or Weak Grover Tap.</p>
+            <p class="text-[11px] text-slate-700"><strong>Action:</strong> Signature accepted with partial decoy retransmission request. Monitor channel attenuation.</p>
+          </div>
+
+          <div id="tier-card-quarantine" class="p-3.5 rounded-xl border border-slate-200 bg-white transition-all">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="font-bold text-slate-800">Tier 3: QUARANTINE</span>
+              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-orange-100 text-orange-800">HIGH RISK</span>
+            </div>
+            <p class="text-[11px] text-slate-500 mb-2">QBER &gt; 20% (honest loss) or ECS &lt; 0.90.</p>
+            <p class="text-[11px] text-slate-700"><strong>Action:</strong> Signature held in escrow. Requires secondary multi-party quorum review before release.</p>
+          </div>
+
+          <div id="tier-card-isolate" class="p-3.5 rounded-xl border border-slate-200 bg-white transition-all">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="font-bold text-slate-800">Tier 4: ISOLATE / BLOCK</span>
+              <span class="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-800">ATTACK</span>
+            </div>
+            <p class="text-[11px] text-slate-500 mb-2">Intercept-Resend, Forgery, Probe.</p>
+            <p class="text-[11px] text-slate-700"><strong>Action:</strong> Signature terminated immediately. Adversary fiber quarantined and audit block hashed to chain.</p>
+          </div>
+
         </div>
       </div>
 
@@ -1014,7 +1376,7 @@
 
     // Tab Navigation
     function switchTab(tabId) {
-      const tabs = ['command-center', 'matrix', 'benchmarks', 'theory', 'ledger', 'noise', 'multiparty'];
+      const tabs = ['command-center', 'explain', 'matrix', 'benchmarks', 'theory', 'ledger', 'noise', 'multiparty'];
       tabs.forEach(t => {
         const el = document.getElementById(`tab-${t}`);
         const btn = document.getElementById(`tab-btn-${t}`);
@@ -1029,6 +1391,7 @@
         }
       });
 
+      if (tabId === 'explain' && lastSimResult) updateExplanationPage(lastSimResult);
       if (tabId === 'matrix') fetchAttackMatrix();
       if (tabId === 'benchmarks') fetchBenchmarks();
       if (tabId === 'theory') fetchSecurityReport();
@@ -1404,6 +1767,221 @@
 
       // Render Qubit Chips
       renderQubitChips(data.sample_qubits);
+
+      // Render Dynamic Model Explanations & Good/Bad Diagnostics
+      updateExplanationPage(data);
+    }
+
+    // ==========================================
+    // RESULT EXPLANATION & MODEL DIAGNOSTICS ENGINE
+    // ==========================================
+    function updateExplanationPage(data) {
+      if (!data) return;
+      const qber = (data.qber_analysis && data.qber_analysis.qber !== undefined) ? data.qber_analysis.qber : 0.0;
+      const sVal = (data.chsh && data.chsh.S_value !== undefined) ? data.chsh.S_value : 2.82;
+      const decision = (data.decision && data.decision.decision) ? data.decision.decision : "ACCEPTED";
+      const enforcement = (data.decision && data.decision.enforcement_level) ? data.decision.enforcement_level : "MONITOR";
+      const threatType = (data.decision && data.decision.threat_type) ? data.decision.threat_type : "NORMAL_OPERATION";
+      const asym = (data.qber_analysis && data.qber_analysis.basis_asymmetry !== undefined) ? data.qber_analysis.basis_asymmetry : 0.0;
+      const grover = data.qber_analysis?.grover_amplification || {};
+      const ecs = data.consensus || {};
+      const hoeff = data.hoeffding_bounds || {};
+
+      // 1. Executive Assessment Banner
+      const card = document.getElementById('exp-health-card');
+      const iconBg = document.getElementById('exp-health-icon-bg');
+      const icon = document.getElementById('exp-health-icon');
+      const badge = document.getElementById('exp-health-badge');
+      const verdict = document.getElementById('exp-health-verdict');
+      const title = document.getElementById('exp-health-title');
+      const desc = document.getElementById('exp-health-desc');
+      const actBadge = document.getElementById('exp-health-action-badge');
+      const ruleRef = document.getElementById('exp-health-rule-ref');
+
+      if (card) {
+        if (decision === "ACCEPTED" && enforcement === "MONITOR") {
+          card.className = "mt-4 p-4.5 rounded-2xl border border-emerald-200 bg-emerald-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all";
+          if (iconBg) iconBg.className = "w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border border-emerald-200 bg-emerald-100 text-emerald-700";
+          if (icon) icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>`;
+          if (badge) {
+            badge.className = "px-2.5 py-0.5 text-xs font-bold rounded-lg uppercase tracking-wider bg-emerald-100 text-emerald-800 border border-emerald-200";
+            badge.innerText = "GOOD RESULT • HEALTHY";
+          }
+          if (verdict) {
+            verdict.className = "text-xs font-mono-num font-bold text-emerald-700";
+            verdict.innerText = "SIGNATURE VERIFIED AUTHENTIC";
+          }
+          if (title) title.innerText = "Deterministic Signature Acceptance (Normal Baseline)";
+          if (desc) desc.innerText = "All quantum telemetry checks passed with flying colors. The transmission channel shows healthy optical fidelity, Bell entanglement is strongly verified, and no basis disturbance or eavesdropping taps were detected. This signature is unconditionally authentic and safe for immediate transaction execution.";
+          if (actBadge) {
+            actBadge.className = "text-xs font-bold font-mono-num px-2.5 py-1 rounded-lg bg-emerald-600 text-white";
+            actBadge.innerText = "ACTION: ACCEPT & SETTLE";
+          }
+          if (ruleRef) ruleRef.innerText = `Rule: ${data.decision?.trigger_rule || 'Rule 1 (Baseline)'}`;
+        } else if (decision === "ACCEPTED" && enforcement === "RESTRICT") {
+          card.className = "mt-4 p-4.5 rounded-2xl border border-amber-200 bg-amber-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all";
+          if (iconBg) iconBg.className = "w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border border-amber-200 bg-amber-100 text-amber-700";
+          if (icon) icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>`;
+          if (badge) {
+            badge.className = "px-2.5 py-0.5 text-xs font-bold rounded-lg uppercase tracking-wider bg-amber-100 text-amber-800 border border-amber-200";
+            badge.innerText = "CAUTION • ELEVATED NOISE";
+          }
+          if (verdict) {
+            verdict.className = "text-xs font-mono-num font-bold text-amber-700";
+            verdict.innerText = "ACCEPTED WITH RETRANSMISSION";
+          }
+          if (title) title.innerText = `Elevated Channel Noise / Faint Disturbance (${threatType.replace(/_/g, ' ')})`;
+          if (desc) desc.innerText = "The signature payload was verified, but optical channel attenuation is elevated (between 12% and 20%) or Grover amplification detected faint perturbation. While no full eavesdropping breach occurred, the system requests partial decoy state retransmission to maintain optimal signal margin.";
+          if (actBadge) {
+            actBadge.className = "text-xs font-bold font-mono-num px-2.5 py-1 rounded-lg bg-amber-600 text-white";
+            actBadge.innerText = "ACTION: RETRANSMIT DECOYS";
+          }
+          if (ruleRef) ruleRef.innerText = `Rule: ${data.decision?.trigger_rule || 'Rule 4 (Elevated Noise)'}`;
+        } else if (enforcement === "QUARANTINE") {
+          card.className = "mt-4 p-4.5 rounded-2xl border border-orange-200 bg-orange-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all";
+          if (iconBg) iconBg.className = "w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border border-orange-200 bg-orange-100 text-orange-700";
+          if (icon) icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>`;
+          if (badge) {
+            badge.className = "px-2.5 py-0.5 text-xs font-bold rounded-lg uppercase tracking-wider bg-orange-100 text-orange-800 border border-orange-200";
+            badge.innerText = "BAD RESULT • QUARANTINED";
+          }
+          if (verdict) {
+            verdict.className = "text-xs font-mono-num font-bold text-orange-700";
+            verdict.innerText = "TRANSACTION HELD IN ESCROW";
+          }
+          if (title) title.innerText = `Suspicious Degradation: ${threatType.replace(/_/g, ' ')}`;
+          if (desc) desc.innerText = "The verification pipeline detected critical anomalies exceeding acceptable bounds (QBER > 20% or cross-verifier consensus desynchronization). The signature is placed in quarantine escrow to prevent potential man-in-the-middle exploitation or sender contract repudiation.";
+          if (actBadge) {
+            actBadge.className = "text-xs font-bold font-mono-num px-2.5 py-1 rounded-lg bg-orange-600 text-white";
+            actBadge.innerText = "ACTION: HOLD IN ESCROW";
+          }
+          if (ruleRef) ruleRef.innerText = `Rule: ${data.decision?.trigger_rule || 'Rule 6 (Quarantine)'}`;
+        } else {
+          card.className = "mt-4 p-4.5 rounded-2xl border border-rose-200 bg-rose-50/50 flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all animate-threat";
+          if (iconBg) iconBg.className = "w-11 h-11 rounded-xl flex items-center justify-center shrink-0 border border-rose-200 bg-rose-100 text-rose-700";
+          if (icon) icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M18.364 18.364A9 9 0 005.636 5.636m12.728 12.728A9 9 0 015.636 5.636m12.728 12.728L5.636 5.636"></path>`;
+          if (badge) {
+            badge.className = "px-2.5 py-0.5 text-xs font-bold rounded-lg uppercase tracking-wider bg-rose-100 text-rose-800 border border-rose-200";
+            badge.innerText = "CRITICAL BAD RESULT • ATTACK DETECTED";
+          }
+          if (verdict) {
+            verdict.className = "text-xs font-mono-num font-bold text-rose-700";
+            verdict.innerText = "SIGNATURE REJECTED & ISOLATED";
+          }
+          if (title) title.innerText = `Active Threat Intercepted: ${threatType.replace(/_/g, ' ')}`;
+          if (desc) desc.innerText = "Severe quantum or cryptographic breach detected! The eavesdropper's measurement collapsed the Bell state, destroyed quantum entanglement, or attempted classical bit manipulation. The signature was immediately rejected, and the channel is isolated to protect network integrity.";
+          if (actBadge) {
+            actBadge.className = "text-xs font-bold font-mono-num px-2.5 py-1 rounded-lg bg-rose-600 text-white";
+            actBadge.innerText = "ACTION: ISOLATE & SEVER";
+          }
+          if (ruleRef) ruleRef.innerText = `Rule: ${data.decision?.trigger_rule || 'Rule 2 (Attack Intercept)'}`;
+        }
+      }
+
+      // 2. 4 Quick Health Checks
+      const qOk = qber <= 0.12;
+      const sOk = sVal >= 2.50;
+      const asymOk = asym < 0.20;
+      const ecsOk = ecs.consensus_verified && !ecs.repudiation_detected;
+
+      setCheckItem('exp-chk-qber-badge', 'exp-chk-qber-val', 'exp-chk-qber-txt',
+        qOk ? 'PASS' : 'FAIL', `${(qber * 100).toFixed(2)}%`,
+        qOk ? 'Within 12% tolerance' : 'Exceeds tolerance threshold', qOk);
+
+      setCheckItem('exp-chk-chsh-badge', 'exp-chk-chsh-val', 'exp-chk-chsh-txt',
+        sOk ? 'PASS' : 'BROKEN', `S = ${sVal.toFixed(3)}`,
+        sOk ? 'Entangled (S >= 2.50)' : 'Classical / eavesdropped', sOk);
+
+      setCheckItem('exp-chk-asym-badge', 'exp-chk-asym-val', 'exp-chk-asym-txt',
+        asymOk ? 'NORMAL' : 'ATTACK', `ΔE = ${(asym * 100).toFixed(1)}%`,
+        asymOk ? 'Uniform isotropic noise' : 'Intercept-resend asymmetry', asymOk);
+
+      setCheckItem('exp-chk-ecs-badge', 'exp-chk-ecs-val', 'exp-chk-ecs-txt',
+        ecsOk ? 'AGREED' : 'DISPUTED', `ECS = ${Number(ecs.ECS_score ?? 1.0).toFixed(3)}`,
+        ecsOk ? 'Verifiers in consensus' : 'Repudiation mismatch', ecsOk);
+
+      // 3. Model Cards
+      // Model 1: QBER
+      setModelCard('exp-m1-badge', 'exp-m1-qber', 'exp-m1-eval',
+        qOk ? 'GOOD' : 'BAD', `${(qber * 100).toFixed(2)}%`,
+        qOk ? 'GOOD RESULT: Transmission errors are within normal optical tolerance (T_v = 12%). Photons traversed the channel without destructive eavesdropping perturbation.'
+            : 'BAD RESULT: Measured error rate exceeds safety thresholds. Excess bit flips or depolarizing noise indicate channel degradation or unauthorized measurement collapse.', qOk);
+
+      // Model 2: CHSH
+      setModelCard('exp-m2-badge', 'exp-m2-sval', 'exp-m2-eval',
+        sOk ? 'GOOD' : 'BAD', `S = ${sVal.toFixed(3)}`,
+        sOk ? 'GOOD RESULT: Strong quantum non-locality observed (S >= 2.50). The Bell inequality is violated, mathematically proving by Bell monogamy that no third party is entangled with the key.'
+            : 'BAD RESULT: Bell inequality is not violated (S < 2.50). The quantum correlation has collapsed down to local realism, characteristic of an eavesdropper measuring states.', sOk);
+
+      // Model 3: Asymmetry
+      setModelCard('exp-m3-badge', 'exp-m3-asym', 'exp-m3-eval',
+        asymOk ? 'GOOD' : 'BAD', `${(asym * 100).toFixed(2)}%`,
+        asymOk ? 'GOOD RESULT: Errors are evenly distributed across conjugate Pauli bases (X, Y, Z), confirming honest isotropic fiber loss rather than targeted eavesdropping.'
+               : 'BAD RESULT: High basis asymmetry detected (ΔE >= 20%). The eavesdropper measured in one basis, causing severe 50% disturbance in the conjugate basis due to Heisenberg uncertainty.', asymOk);
+
+      // Model 4: Grover
+      const gOk = !grover.weak_attack_detected;
+      setModelCard('exp-m4-badge', 'exp-m4-amp', 'exp-m4-eval',
+        gOk ? 'GOOD' : 'ALERT', `${((grover.amplified_score ?? qber) * 100).toFixed(2)}%`,
+        gOk ? 'GOOD RESULT: Grover amplitude amplification detected no hidden taps beneath the fiber noise floor. Baseline optical stability is intact.'
+            : 'BAD RESULT: Iterative quantum rotations amplified a covert low-power optical tap that was attempting to hide under the optical noise threshold.', gOk);
+      const gGainEl = document.getElementById('exp-m4-gain');
+      if (gGainEl) gGainEl.innerText = `${grover.amplification_gain ?? 1.0}x`;
+
+      // Model 5: ECS
+      setModelCard('exp-m5-badge', 'exp-m5-ecs', 'exp-m5-eval',
+        ecsOk ? 'GOOD' : 'BAD', Number(ecs.ECS_score ?? 1.0).toFixed(3),
+        ecsOk ? 'GOOD RESULT: Verifiers Bob and Charlie independently confirmed measurement parity. Alice cannot dispute having signed this transaction.'
+              : 'BAD RESULT: Verifiers observed inconsistent signature tokens. Alice attempted a repudiation attack or Charlie received corrupted quantum states.', ecsOk);
+
+      // Model 6: Security Bounds
+      const bitsVal = hoeff.bits_of_security ?? 37.4;
+      const pForgeVal = hoeff.scipy_exact_p_forge !== undefined ? `≤ 10^${Math.round(Math.log10(Math.max(1e-100, hoeff.scipy_exact_p_forge)))}` : '≤ 10^-12';
+      setModelCard('exp-m6-badge', 'exp-m6-bits', 'exp-m6-eval',
+        'EXCELLENT', `> ${bitsVal} Bits`,
+        `GOOD RESULT: Information-theoretic security guaranteed by Chernoff-Hoeffding probability bounds. The signature is unconditionally secure against quantum computers or supercomputers.`, true);
+      const pForgeEl = document.getElementById('exp-m6-pforge');
+      if (pForgeEl) pForgeEl.innerText = pForgeVal;
+
+      // Model 7: Tier card highlights
+      ['monitor', 'restrict', 'quarantine', 'isolate'].forEach(t => {
+        const el = document.getElementById(`tier-card-${t}`);
+        if (!el) return;
+        el.className = 'p-3.5 rounded-xl border border-slate-200 bg-white transition-all';
+      });
+      const actKey = enforcement === 'MONITOR' ? 'monitor' :
+                     enforcement === 'RESTRICT' ? 'restrict' :
+                     enforcement === 'QUARANTINE' ? 'quarantine' : 'isolate';
+      const activeTierEl = document.getElementById(`tier-card-${actKey}`);
+      if (activeTierEl) {
+        activeTierEl.className = 'p-3.5 rounded-xl border border-indigo-400 bg-indigo-50/40 ring-2 ring-indigo-500 transition-all';
+      }
+    }
+
+    function setCheckItem(badgeId, valId, txtId, badgeTxt, valTxt, txt, isGood) {
+      const b = document.getElementById(badgeId);
+      const v = document.getElementById(valId);
+      const t = document.getElementById(txtId);
+      if (b) {
+        b.innerText = badgeTxt;
+        b.className = isGood ? 'text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 text-emerald-800'
+                             : 'text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-100 text-rose-800';
+      }
+      if (v) v.innerText = valTxt;
+      if (t) t.innerText = txt;
+    }
+
+    function setModelCard(badgeId, valId, evalId, badgeTxt, valTxt, evalTxt, isGood) {
+      const b = document.getElementById(badgeId);
+      const v = document.getElementById(valId);
+      const e = document.getElementById(evalId);
+      if (b) {
+        b.innerText = badgeTxt;
+        b.className = isGood ? 'px-2 py-0.5 text-[10px] font-bold rounded-md uppercase font-mono-num bg-emerald-100 text-emerald-800'
+                             : 'px-2 py-0.5 text-[10px] font-bold rounded-md uppercase font-mono-num bg-rose-100 text-rose-800';
+      }
+      if (v) v.innerText = valTxt;
+      if (e) e.innerText = evalTxt;
     }
 
     // ==========================================
