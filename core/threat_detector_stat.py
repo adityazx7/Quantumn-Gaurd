@@ -205,6 +205,10 @@ class StatisticalThreatDetector:
         scipy_p_forge_exact = float(stats.binom.cdf(k_thresh, L, self.p_forge))
         scipy_p_reject_exact = float(1.0 - stats.binom.cdf(k_thresh, L, self.p_err))
 
+        # Exact Information-Theoretic Security bits: -log2(P_forge_noiseless) = L * log2(3/2) ≈ 0.585 * L
+        exact_its_bits = round(-math.log2(max(p_noiseless_bound, 1e-300)), 2)
+        hoeffding_its_bits = round(-math.log2(max(p_forge_bound, 1e-300)), 2)
+
         return {
             "L": L,
             "hoeffding_p_forge": p_forge_bound,
@@ -212,7 +216,8 @@ class StatisticalThreatDetector:
             "scipy_exact_p_forge": scipy_p_forge_exact,
             "scipy_exact_p_false_reject": scipy_p_reject_exact,
             "noiseless_theoretical_p_forge": p_noiseless_bound,
-            "bits_of_security": round(-math.log2(max(p_forge_bound, 1e-300)), 2)
+            "bits_of_security": exact_its_bits,
+            "hoeffding_bits_of_security": hoeffding_its_bits
         }
 
     def measure_and_verify(self,
