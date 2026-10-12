@@ -13,19 +13,15 @@ import numpy as np
 from typing import Dict, Any, Tuple, Optional
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import Statevector, DensityMatrix, state_fidelity
-try:
-    from qiskit_aer import AerSimulator
-    from qiskit_aer.noise import (
-        NoiseModel,
-        depolarizing_error,
-        amplitude_damping_error,
-        phase_damping_error,
-        pauli_error
-    )
-    HAS_AER = True
-except Exception:
-    HAS_AER = False
-    NoiseModel = None
+# Note: qiskit_aer has known C++ ABI / psutil access violations on Windows Python 3.13.
+# We default HAS_AER to False to use the exact analytical Kraus representation.
+HAS_AER = False
+AerSimulator = None
+NoiseModel = None
+depolarizing_error = None
+amplitude_damping_error = None
+phase_damping_error = None
+pauli_error = None
 
 from core.qds_teleport_core import (
     QiskitCircuitBuilder,
