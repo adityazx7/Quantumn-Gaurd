@@ -7,18 +7,34 @@ Quantum-Inspired Cyber Threat Detection for Digital Signature Security.
 
 import sys
 import os
+import socket
 import webbrowser
 import threading
 import time
 import uvicorn
 
-def open_browser():
+def find_available_port(start_port=8000, max_attempts=20) -> int:
+    env_port = os.environ.get("PORT")
+    if env_port:
+        return int(env_port)
+    for port in range(start_port, start_port + max_attempts):
+        with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+            try:
+                s.bind(('127.0.0.1', port))
+                return port
+            except OSError:
+                continue
+    return start_port
+
+def open_browser(port: int):
     time.sleep(1.2)
-    url = "http://127.0.0.1:8000"
+    url = f"http://127.0.0.1:{port}"
     print(f"[*] Opening QuantumGuard QDS Dashboard in your web browser: {url}")
     webbrowser.open(url)
 
 def main():
+    port = find_available_port(start_port=8000)
+
     print("=" * 80)
     print("  QUANTUM-INSPIRED CYBER THREAT DETECTION FOR DIGITAL SIGNATURE SECURITY")
     print("  Smart India Hackathon (SIH) Problem Statement ID: 26141")
@@ -31,13 +47,15 @@ def main():
     print("  [D3] Adversarial Attack Simulation Suite (attack_simulator)")
     print("  [D4] Mathematical Modelling & Security Proof Engine (security_proofs)")
     print("  [D5] Interactive Security Telemetry & Verification Dashboard (FastAPI + Web UI)")
-    print("\n[*] Starting FastAPI Server on http://127.0.0.1:8000 ...")
+    print("  [+] Modular Microservice Routers & PyJWT Multi-Party Cryptographic Sessions")
+    print("  [+] Qiskit 2.x Advanced Quantum Noise Models (Aer Depolarizing, T1 & T2 Damping)")
+    print(f"\n[*] Starting FastAPI Server on http://127.0.0.1:{port} ...")
 
     # Start browser launcher in a daemon thread
-    threading.Thread(target=open_browser, daemon=True).start()
+    threading.Thread(target=open_browser, args=(port,), daemon=True).start()
 
     # Run Uvicorn server
-    uvicorn.run("api.server:app", host="127.0.0.1", port=8000, log_level="info", reload=False)
+    uvicorn.run("api.server:app", host="127.0.0.1", port=port, log_level="info", reload=False)
 
 if __name__ == "__main__":
     main()
