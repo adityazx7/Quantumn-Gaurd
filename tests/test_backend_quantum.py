@@ -115,7 +115,6 @@ def test_jwt_auth_workflow():
     assert bad_login.status_code == 401
 
     print(">>> [JWT Auth Workflow] All entities authenticated & verified - PASSED")
-    return alice_token
 
 
 def test_multi_party_signature_verification():

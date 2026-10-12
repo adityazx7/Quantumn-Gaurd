@@ -233,7 +233,8 @@ class AdversarialAttackSimulator:
             declared_basis_key=declared_basis_key,
             declared_eigenvalue_key=declared_eig_key,
             canary_indices=canary_indices,
-            canary_states=canary_states
+            canary_states=canary_states,
+            channel_noise=channel_noise
         )
 
         # Cross-Verifier Consensus (Bob & Charlie non-repudiation)

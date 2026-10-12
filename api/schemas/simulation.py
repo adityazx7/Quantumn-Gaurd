@@ -2,14 +2,18 @@
 api/schemas/simulation.py
 Pydantic v2 schemas for QDS simulation requests, responses, benchmarks, and statuses.
 """
-from typing import Optional, Dict, Any, List
+from typing import Optional, Dict, Any, List, Literal
 from pydantic import BaseModel, Field
 
+ValidAttackType = Literal[
+    "NONE", "FORGERY", "IMPERSONATION", "INTERCEPT_RESEND",
+    "REPLAY", "UNAUTHORIZED_PROBE", "WEAK_INTERCEPT", "REPUDIATION"
+]
 
 class SimulationRequest(BaseModel):
-    message: str = Field(default="Quantum Authenticated Transaction Payload", description="Payload message to sign")
+    message: str = Field(default="Quantum Authenticated Transaction Payload", min_length=1, description="Payload message to sign")
     L: int = Field(default=64, ge=16, le=1024, description="Quantum key length in qubits")
-    attack_type: str = Field(
+    attack_type: ValidAttackType = Field(
         default="NONE",
         description="Attack scenario: NONE, FORGERY, IMPERSONATION, INTERCEPT_RESEND, REPLAY, UNAUTHORIZED_PROBE, WEAK_INTERCEPT, REPUDIATION"
     )

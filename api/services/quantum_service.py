@@ -13,14 +13,19 @@ import numpy as np
 from typing import Dict, Any, Tuple, Optional
 from qiskit import QuantumCircuit
 from qiskit.quantum_info import Statevector, DensityMatrix, state_fidelity
-from qiskit_aer import AerSimulator
-from qiskit_aer.noise import (
-    NoiseModel,
-    depolarizing_error,
-    amplitude_damping_error,
-    phase_damping_error,
-    pauli_error
-)
+try:
+    from qiskit_aer import AerSimulator
+    from qiskit_aer.noise import (
+        NoiseModel,
+        depolarizing_error,
+        amplitude_damping_error,
+        phase_damping_error,
+        pauli_error
+    )
+    HAS_AER = True
+except Exception:
+    HAS_AER = False
+    NoiseModel = None
 
 from core.qds_teleport_core import (
     QiskitCircuitBuilder,
@@ -50,47 +55,54 @@ class QuantumSimulationService:
         }
 
     @staticmethod
-    def build_noise_model(noise_type: str, error_rate: float) -> Tuple[NoiseModel, str]:
+    def build_noise_model(noise_type: str, error_rate: float) -> Tuple[Any, str]:
         """
         Constructs a Qiskit Aer NoiseModel for realistic quantum channel noise.
         """
-        noise_model = NoiseModel()
         error_rate = max(0.0, min(0.5, float(error_rate)))
         desc = ""
 
         if noise_type == "depolarizing":
             desc = f"Symmetric depolarizing channel: epsilon={error_rate:.3f} on 1-qubit and 2-qubit gates."
-            error_1q = depolarizing_error(error_rate, 1)
-            error_2q = depolarizing_error(min(error_rate * 1.5, 0.5), 2)
-            noise_model.add_all_qubit_quantum_error(error_1q, ['h', 'x', 's', 'id'])
-            noise_model.add_all_qubit_quantum_error(error_2q, ['cx'])
-
         elif noise_type == "amplitude_damping":
             desc = f"Amplitude damping channel (T1 relaxation / photon absorption): gamma={error_rate:.3f}."
-            error_amp = amplitude_damping_error(error_rate)
-            noise_model.add_all_qubit_quantum_error(error_amp, ['h', 'x', 's', 'id'])
-
         elif noise_type == "phase_damping":
             desc = f"Phase damping channel (T2 pure dephasing / fiber birefringence): lambda={error_rate:.3f}."
-            error_phase = phase_damping_error(error_rate)
-            noise_model.add_all_qubit_quantum_error(error_phase, ['h', 'x', 's', 'id'])
-
         elif noise_type == "bit_flip":
             desc = f"Bit-flip channel (Pauli X error): p={error_rate:.3f}."
-            error_bf = pauli_error([('X', error_rate), ('I', 1.0 - error_rate)])
-            noise_model.add_all_qubit_quantum_error(error_bf, ['h', 'x', 's', 'id'])
-
         elif noise_type == "phase_flip":
             desc = f"Phase-flip channel (Pauli Z error): p={error_rate:.3f}."
-            error_pf = pauli_error([('Z', error_rate), ('I', 1.0 - error_rate)])
-            noise_model.add_all_qubit_quantum_error(error_pf, ['h', 'x', 's', 'id'])
-
         else:
             desc = f"Generic channel depolarizing noise: p={error_rate:.3f}."
-            error_1q = depolarizing_error(error_rate, 1)
-            noise_model.add_all_qubit_quantum_error(error_1q, ['h', 'x', 's', 'id'])
 
-        return noise_model, desc
+        if not HAS_AER or NoiseModel is None:
+            return None, desc
+
+        try:
+            noise_model = NoiseModel()
+            if noise_type == "depolarizing":
+                error_1q = depolarizing_error(error_rate, 1)
+                error_2q = depolarizing_error(min(error_rate * 1.5, 0.5), 2)
+                noise_model.add_all_qubit_quantum_error(error_1q, ['h', 'x', 's', 'id'])
+                noise_model.add_all_qubit_quantum_error(error_2q, ['cx'])
+            elif noise_type == "amplitude_damping":
+                error_amp = amplitude_damping_error(error_rate)
+                noise_model.add_all_qubit_quantum_error(error_amp, ['h', 'x', 's', 'id'])
+            elif noise_type == "phase_damping":
+                error_phase = phase_damping_error(error_rate)
+                noise_model.add_all_qubit_quantum_error(error_phase, ['h', 'x', 's', 'id'])
+            elif noise_type == "bit_flip":
+                error_bf = pauli_error([('X', error_rate), ('I', 1.0 - error_rate)])
+                noise_model.add_all_qubit_quantum_error(error_bf, ['h', 'x', 's', 'id'])
+            elif noise_type == "phase_flip":
+                error_pf = pauli_error([('Z', error_rate), ('I', 1.0 - error_rate)])
+                noise_model.add_all_qubit_quantum_error(error_pf, ['h', 'x', 's', 'id'])
+            else:
+                error_1q = depolarizing_error(error_rate, 1)
+                noise_model.add_all_qubit_quantum_error(error_1q, ['h', 'x', 's', 'id'])
+            return noise_model, desc
+        except Exception:
+            return None, desc
 
     @classmethod
     def simulate_noisy_circuit(cls,
@@ -135,29 +147,20 @@ class QuantumSimulationService:
 
         qc.measure(0, 0)
 
-        # Build noise model
+        # Build noise model and description
         noise_model, desc = cls.build_noise_model(noise_type, error_rate)
 
-        # Execute using AerSimulator
-        backend = AerSimulator(noise_model=noise_model)
-        job = backend.run(qc, shots=shots)
-        result = job.result()
-        counts = result.get_counts(qc)
-
         # Theoretical degraded density matrix for single qubit under noise
-        # rho_ideal = |psi><psi|
         rho_ideal = np.outer(ideal_target_state, np.conj(ideal_target_state))
 
         if noise_type == "depolarizing":
             rho_noisy = (1.0 - error_rate) * rho_ideal + (error_rate / 2.0) * SIGMA_I
         elif noise_type == "amplitude_damping":
-            # Kraus operators: E0 = [[1, 0], [0, sqrt(1-gamma)]], E1 = [[0, sqrt(gamma)], [0, 0]]
             gamma = error_rate
             e0 = np.array([[1.0, 0.0], [0.0, np.sqrt(max(0.0, 1.0 - gamma))]], dtype=np.complex128)
             e1 = np.array([[0.0, np.sqrt(gamma)], [0.0, 0.0]], dtype=np.complex128)
             rho_noisy = e0 @ rho_ideal @ np.conj(e0.T) + e1 @ rho_ideal @ np.conj(e1.T)
         elif noise_type == "phase_damping":
-            # Kraus operators: E0 = [[1, 0], [0, sqrt(1-lambda)]], E1 = [[0, 0], [0, sqrt(lambda)]]
             lam = error_rate
             e0 = np.array([[1.0, 0.0], [0.0, np.sqrt(max(0.0, 1.0 - lam))]], dtype=np.complex128)
             e1 = np.array([[0.0, 0.0], [0.0, np.sqrt(lam)]], dtype=np.complex128)
@@ -168,6 +171,22 @@ class QuantumSimulationService:
             rho_noisy = (1.0 - error_rate) * rho_ideal + error_rate * (SIGMA_Z @ rho_ideal @ SIGMA_Z)
         else:
             rho_noisy = (1.0 - error_rate) * rho_ideal + (error_rate / 2.0) * SIGMA_I
+
+        counts = None
+        if HAS_AER and noise_model is not None:
+            try:
+                backend = AerSimulator(noise_model=noise_model)
+                job = backend.run(qc, shots=shots)
+                result = job.result()
+                counts = result.get_counts(qc)
+            except Exception:
+                counts = None
+
+        if counts is None:
+            # Analytical measurement distribution from density matrix
+            p_zero = float(np.real(rho_noisy[0, 0])) if basis == 'Z' else 0.5 + 0.5 * (1.0 - error_rate)
+            c0 = int(np.random.binomial(shots, max(0.0, min(1.0, p_zero))))
+            counts = {'0': c0, '1': shots - c0}
 
         # Purity Tr(rho^2)
         purity = float(np.real(np.trace(rho_noisy @ rho_noisy)))
