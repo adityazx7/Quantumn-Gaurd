@@ -61,13 +61,26 @@ if DATABASE_URL.startswith("sqlite"):
         echo=False
     )
 else:
-    engine = create_engine(
-        DATABASE_URL,
-        pool_pre_ping=True,
-        pool_size=10,
-        max_overflow=20,
-        echo=False
-    )
+    # Try connecting to PostgreSQL; fallback to local SQLite if PostgreSQL server is not running
+    try:
+        test_engine = create_engine(
+            DATABASE_URL,
+            pool_pre_ping=True,
+            connect_args={"connect_timeout": 1}
+        )
+        with test_engine.connect() as conn:
+            pass
+        engine = test_engine
+    except Exception:
+        # Fallback to local SQLite file
+        sqlite_url = "sqlite:///./quantumguard_local.db"
+        DATABASE_URL = sqlite_url
+        connect_args["check_same_thread"] = False
+        engine = create_engine(
+            DATABASE_URL,
+            connect_args=connect_args,
+            echo=False
+        )
 
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 

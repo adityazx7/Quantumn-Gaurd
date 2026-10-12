@@ -35,6 +35,8 @@ wheels/
 # Testing & logs
 .pytest_cache/
 *.log
+.coverage
+*.bak
 
 # Environment & local secrets
 .env

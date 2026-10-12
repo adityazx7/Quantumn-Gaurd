@@ -3,43 +3,45 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>QuantumGuard QDS: Red-Team / Blue-Team Quantum Threat Detection Command Center</title>
+  <title>QuantumGuard QDS: Quantum Cyber Threat Detection</title>
   
   <!-- Tailwind CSS CDN -->
   <script src="https://cdn.tailwindcss.com"></script>
   <!-- Plotly.js CDN for High-Fidelity 3D Bloch Sphere & Analytics -->
   <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-  <!-- KaTeX for Formal Math Equations -->
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
-  <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"
-          onload="renderMathInElement(document.body);"></script>
 
   <script>
     tailwind.config = {
       theme: {
         extend: {
           colors: {
-            redteam: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+            },
+            threat: {
               50: '#fff1f2',
               100: '#ffe4e6',
               500: '#f43f5e',
               600: '#e11d48',
               700: '#be123c',
             },
-            blueteam: {
+            secure: {
               50: '#ecfdf5',
               100: '#d1fae5',
               500: '#10b981',
               600: '#059669',
               700: '#047857',
             },
-            quantum: {
-              indigo: '#6366f1',
-              purple: '#8b5cf6',
-              cyan: '#06b6d4',
-              amber: '#f59e0b',
-              slate: '#0f172a'
+            warn: {
+              50: '#fffbeb',
+              100: '#fef3c7',
+              500: '#f59e0b',
+              600: '#d97706',
+              700: '#b45309',
             }
           }
         }
@@ -48,423 +50,630 @@
   </script>
 
   <style>
-    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
+    :root {
+      --bg-main: #F7F8FC;
+      --card-bg: #FFFFFF;
+      --border-color: #E8EAF2;
+      --text-main: #111827;
+      --text-muted: #6B7280;
+      --accent-gradient: linear-gradient(135deg, #4F46E5 0%, #06B6D4 100%);
+    }
+
     body {
-      font-family: 'Inter', sans-serif;
-      background-color: #f8fafc;
-      color: #0f172a;
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background-color: var(--bg-main);
+      color: var(--text-main);
+      overflow-x: hidden;
     }
-    .font-mono-code {
+
+    .font-mono-num {
       font-family: 'JetBrains Mono', monospace;
+      font-feature-settings: "tnum" on, "lnum" on;
     }
-    .glass-card {
-      background: #ffffff;
-      border: 1px solid #e2e8f0;
-      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.04), 0 2px 4px -2px rgba(0, 0, 0, 0.02);
+
+    .q-card {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color);
+      border-radius: 16px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02), 0 4px 12px rgba(0, 0, 0, 0.03);
+      transition: box-shadow 0.2s ease, border-color 0.2s ease;
     }
-    .pulse-dot {
-      animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+
+    .q-card:hover {
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05);
     }
-    @keyframes pulse {
+
+    /* Attack scenario selection button */
+    .atk-card {
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      background: #FFFFFF;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+      cursor: pointer;
+      user-select: none;
+    }
+    .atk-card:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.08);
+      border-color: #CBD5E1;
+    }
+    .atk-card:active {
+      transform: translateY(0);
+    }
+    .atk-card.active-safe {
+      border-color: #10B981;
+      background: #ECFDF5;
+      box-shadow: 0 0 0 1px #10B981, 0 4px 12px rgba(16, 185, 129, 0.12);
+    }
+    .atk-card.active-threat {
+      border-color: #E11D48;
+      background: #FFF1F2;
+      box-shadow: 0 0 0 1px #E11D48, 0 4px 12px rgba(225, 29, 72, 0.12);
+    }
+
+    /* Execute Button Shimmer */
+    .btn-shimmer {
+      background: linear-gradient(135deg, #4F46E5 0%, #2563EB 50%, #06B6D4 100%);
+      background-size: 200% 200%;
+      transition: background-position 0.5s ease, transform 0.15s ease, box-shadow 0.2s ease;
+    }
+    .btn-shimmer:hover {
+      background-position: 100% 100%;
+      box-shadow: 0 6px 20px rgba(79, 70, 229, 0.35);
+      transform: translateY(-1px);
+    }
+    .btn-shimmer:active {
+      transform: translateY(0);
+    }
+
+    /* Subtle pulse animation for status dots */
+    .dot-pulse {
+      animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+    }
+    @keyframes pulse-ring {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.35; }
     }
+
+    /* Threat Alert Shake Animation */
+    @keyframes threat-shake {
+      0%, 100% { transform: translateX(0); }
+      20%, 60% { transform: translateX(-4px); }
+      40%, 80% { transform: translateX(4px); }
+    }
+    .animate-threat {
+      animation: threat-shake 0.4s ease-in-out;
+    }
+
+    /* Toast Container */
+    #toast-container {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      z-index: 100;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      pointer-events: none;
+    }
+    .toast-msg {
+      background: #1E293B;
+      color: #F8FAFC;
+      padding: 10px 16px;
+      border-radius: 10px;
+      font-size: 12px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+      transition: all 0.3s ease;
+      pointer-events: auto;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    /* Sticky table header with subtle shadow */
+    .sticky-tbl-header th {
+      position: sticky;
+      top: 0;
+      background: #F8FAFC;
+      z-index: 10;
+    }
+
+    /* Custom range sliders */
+    input[type=range] {
+      -webkit-appearance: none;
+      height: 6px;
+      border-radius: 9999px;
+      background: #E2E8F0;
+      outline: none;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: #4F46E5;
+      cursor: pointer;
+      box-shadow: 0 1px 4px rgba(79, 70, 229, 0.4);
+      transition: transform 0.1s ease;
+    }
+    input[type=range]::-webkit-slider-thumb:hover {
+      transform: scale(1.15);
+    }
+
+    /* Responsive grid styles */
+    @media (prefers-reduced-motion: reduce) {
+      *, ::before, ::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
   </style>
 </head>
-<body class="min-h-screen flex flex-col bg-slate-50 text-slate-800">
+<body class="min-h-screen flex flex-col antialiased">
 
-  <!-- TOP HEADER / BRAND BAR -->
-  <header class="bg-white border-b border-slate-200 sticky top-0 z-50 shadow-sm">
-    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-3 flex flex-wrap items-center justify-between gap-4">
+  <!-- TOP HEADER -->
+  <header class="bg-white border-b border-slate-200 sticky top-0 z-40 shadow-xs">
+    <div class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-3.5 flex items-center justify-between gap-4">
       
-      <!-- Brand & Badges -->
-      <div class="flex items-center space-x-3.5">
-        <div class="w-11 h-11 rounded-xl bg-gradient-to-tr from-indigo-600 via-sky-500 to-emerald-400 flex items-center justify-center shadow-md">
-          <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <!-- Brand Logo & Title -->
+      <div class="flex items-center space-x-3">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-indigo-600 to-cyan-500 flex items-center justify-center shadow-xs">
+          <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 11c0 3.517-1.009 6.799-2.753 9.571m-3.44-2.04l.054-.09A13.916 13.916 0 008 11a4 4 0 118 0c0 1.017-.07 2.019-.203 3m-2.118 6.844A21.88 21.88 0 0015.171 17m3.839 1.132c.645-2.266.99-4.659.99-7.132A8 8 0 004 11a8.006 8.006 0 001.218 4.249"></path>
           </svg>
         </div>
         <div>
           <div class="flex items-center space-x-2">
-            <h1 class="text-lg font-black text-slate-900 tracking-tight">QuantumGuard QDS</h1>
-            <span class="px-2 py-0.5 text-[11px] font-bold rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">SIH ID: 26141</span>
-            <span class="px-2 py-0.5 text-[11px] font-bold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">Zero-AI / ITS</span>
-            <span class="px-2 py-0.5 text-[11px] font-bold rounded-full bg-sky-50 text-sky-700 border border-sky-200">Qiskit 2.5 + SciPy</span>
+            <h1 class="text-base font-bold text-slate-900 tracking-tight">QuantumGuard QDS</h1>
+            <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 dot-pulse"></span>
+              Live Telemetry
+            </span>
           </div>
-          <p class="text-xs text-slate-500">Quantum-Inspired Cyber Threat Detection for Digital Signature Security &bull; Egreen Quanta LLP</p>
+          <p class="text-[11px] text-slate-500">Teleportation-Based Quantum Digital Signature Threat Detection</p>
         </div>
       </div>
 
-      <!-- Quick Action Controls -->
-      <div class="flex items-center space-x-3">
-        <button onclick="openCircuitModal()" class="text-xs px-3 py-1.5 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold transition flex items-center space-x-1.5 border border-indigo-200">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
-          <span>View Qiskit Circuit</span>
-        </button>
-
-        <div class="flex items-center space-x-2 text-xs font-semibold px-3 py-1.5 rounded-lg bg-slate-100 border border-slate-200 text-slate-700">
-          <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 pulse-dot"></span>
-          <span>Ledger Height: <strong id="lbl-block-height" class="text-indigo-600 font-mono-code">#1</strong></span>
+      <!-- Header Actions -->
+      <div class="flex items-center space-x-2.5">
+        <!-- Ledger Height Pill -->
+        <div id="header-ledger-pill" class="flex items-center space-x-1.5 text-xs font-semibold px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-slate-700">
+          <span class="w-2 h-2 rounded-full bg-indigo-500 dot-pulse"></span>
+          <span>Ledger: <strong id="lbl-block-height" class="text-indigo-600 font-mono-num">#1</strong></span>
         </div>
 
-        <button onclick="resetAuditLedger()" class="text-xs px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-600 transition flex items-center space-x-1 border border-slate-200" title="Reset Microsecond Cache & Ledger">
-          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-          <span>Reset</span>
+        <!-- Circuit Modal Trigger -->
+        <button onclick="openCircuitModal()" class="text-xs px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold transition flex items-center space-x-1.5 border border-indigo-200" aria-label="View Circuit">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path></svg>
+          <span>Circuit</span>
+        </button>
+
+        <!-- Reset Button -->
+        <button onclick="resetAuditLedger()" class="p-2 rounded-xl bg-slate-50 hover:bg-slate-100 text-slate-600 transition border border-slate-200" title="Reset Session Cache & Ledger" aria-label="Reset Cache & Ledger">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
         </button>
       </div>
 
     </div>
 
     <!-- NAVIGATION TABS -->
-    <nav class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex space-x-8 border-t border-slate-100 text-xs font-semibold">
-      <button onclick="switchTab('command-center')" id="tab-btn-command-center" class="py-3 px-1 border-b-2 border-indigo-600 text-indigo-600 font-bold flex items-center space-x-1.5">
+    <nav class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 flex space-x-6 border-t border-slate-100 text-xs font-medium overflow-x-auto" aria-label="Navigation Tabs">
+      <button onclick="switchTab('command-center')" id="tab-btn-command-center" class="py-3 px-1 border-b-2 border-indigo-600 text-indigo-600 font-bold flex items-center space-x-1.5 whitespace-nowrap">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
-        <span>Red-Team / Blue-Team Command Center</span>
+        <span>Command Center</span>
       </button>
-      <button onclick="switchTab('matrix')" id="tab-btn-matrix" class="py-3 px-1 border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center space-x-1.5">
+      <button onclick="switchTab('matrix')" id="tab-btn-matrix" class="py-3 px-1 border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 whitespace-nowrap">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
-        <span>7-Attack Threat Matrix</span>
+        <span>Threat Matrix</span>
       </button>
-      <button onclick="switchTab('benchmarks')" id="tab-btn-benchmarks" class="py-3 px-1 border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center space-x-1.5">
+      <button onclick="switchTab('benchmarks')" id="tab-btn-benchmarks" class="py-3 px-1 border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 whitespace-nowrap">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z"></path></svg>
-        <span>SciPy Bounds & O(L) Benchmarks</span>
+        <span>Statistical Benchmarks</span>
       </button>
-      <button onclick="switchTab('theory')" id="tab-btn-theory" class="py-3 px-1 border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center space-x-1.5">
+      <button onclick="switchTab('theory')" id="tab-btn-theory" class="py-3 px-1 border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 whitespace-nowrap">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"></path></svg>
-        <span>Formal Security Proofs (ITS)</span>
+        <span>Security Proofs</span>
       </button>
-      <button onclick="switchTab('ledger')" id="tab-btn-ledger" class="py-3 px-1 border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center space-x-1.5">
+      <button onclick="switchTab('ledger')" id="tab-btn-ledger" class="py-3 px-1 border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 whitespace-nowrap">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
-        <span>SHA-256 Audit Ledger</span>
+        <span>Audit Ledger</span>
+      </button>
+      <button onclick="switchTab('noise')" id="tab-btn-noise" class="py-3 px-1 border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 whitespace-nowrap">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z"></path></svg>
+        <span>Noise Lab</span>
+      </button>
+      <button onclick="switchTab('multiparty')" id="tab-btn-multiparty" class="py-3 px-1 border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 whitespace-nowrap">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"></path></svg>
+        <span>Multi-Party Sessions</span>
       </button>
     </nav>
   </header>
 
-  <!-- MAIN BODY -->
-  <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full">
+  <!-- MAIN VIEWPORT -->
+  <main class="max-w-[1280px] mx-auto px-4 sm:px-6 lg:px-8 py-6 flex-1 w-full space-y-6">
 
     <!-- ======================================================== -->
-    <!-- TAB 1: RED-TEAM / BLUE-TEAM COMMAND CENTER               -->
+    <!-- TAB 1: COMMAND CENTER & REAL-TIME TELEMETRY              -->
     <!-- ======================================================== -->
     <div id="tab-command-center" class="space-y-6">
 
-      <!-- TOP METRIC CARDS ROW -->
+      <!-- TOP METRIC STRIP (5 Equal-Height Cards) -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
-        <!-- 1. Protocol Decision & Enforcement Level -->
-        <div class="glass-card rounded-2xl p-4 flex flex-col justify-between border-l-4 border-l-emerald-500" id="card-decision-border">
-          <div class="flex items-center justify-between text-xs text-slate-500 font-medium">
+        
+        <!-- Metric 1: Adaptive Enforcement -->
+        <div class="q-card p-4 flex flex-col justify-between" id="card-enforcement">
+          <div class="flex items-center justify-between text-xs text-slate-500">
             <span>Adaptive Enforcement</span>
-            <span id="badge-enforcement" class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">MONITOR</span>
+            <span id="badge-enforcement-dot" class="w-2 h-2 rounded-full bg-emerald-500"></span>
           </div>
-          <div class="mt-2 flex items-baseline justify-between">
-            <span id="metric-decision" class="text-2xl font-black text-emerald-600">ACCEPTED</span>
-            <span id="badge-confidence" class="text-[10px] font-bold text-slate-500 font-mono-code">100% Conf</span>
+          <div class="my-2">
+            <span id="badge-enforcement" class="text-2xl font-black text-emerald-600 font-mono-num tracking-tight">MONITOR</span>
           </div>
-          <p id="metric-threat-type" class="text-xs text-slate-600 mt-1 truncate">Legitimate Signature</p>
+          <div class="flex items-center justify-between text-[11px] text-slate-500">
+            <span id="metric-threat-type" class="truncate">Legitimate Signature</span>
+            <span id="badge-confidence" class="font-mono-num font-semibold text-slate-600">100%</span>
+          </div>
         </div>
 
-        <!-- 2. Empirical QBER vs SciPy Hoeffding Threshold -->
-        <div class="glass-card rounded-2xl p-4 flex flex-col justify-between">
-          <div class="flex items-center justify-between text-xs text-slate-500 font-medium">
+        <!-- Metric 2: Observed QBER -->
+        <div class="q-card p-4 flex flex-col justify-between">
+          <div class="flex items-center justify-between text-xs text-slate-500">
             <span>Observed QBER</span>
-            <span class="text-[10px] text-slate-400 font-mono-code">T_v = 12%</span>
+            <span class="flex items-center gap-1 text-[11px] font-mono-num text-slate-400">
+              <span id="qber-dot" class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              T_v = 12%
+            </span>
           </div>
-          <div class="mt-2 flex items-baseline justify-between">
-            <span id="metric-qber" class="text-2xl font-black text-slate-900 font-mono-code">0.00%</span>
-            <span id="qber-badge" class="text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600">Optimal</span>
+          <div class="my-2">
+            <span id="metric-qber" class="text-2xl font-black text-slate-900 font-mono-num tracking-tight">0.00%</span>
           </div>
-          <div class="w-full bg-slate-100 rounded-full h-1.5 mt-2 overflow-hidden">
-            <div id="qber-progress" class="bg-emerald-500 h-1.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+          <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+            <div id="qber-progress" class="bg-emerald-500 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
           </div>
         </div>
 
-        <!-- 3. CHSH Bell Inequality (S-parameter) -->
-        <div class="glass-card rounded-2xl p-4 flex flex-col justify-between">
-          <div class="flex items-center justify-between text-xs text-slate-500 font-medium">
-            <span>CHSH Entanglement (S)</span>
-            <span class="text-[10px] text-indigo-600 font-mono-code font-bold">2.828 Max</span>
+        <!-- Metric 3: CHSH Bell Inequality (S) -->
+        <div class="q-card p-4 flex flex-col justify-between">
+          <div class="flex items-center justify-between text-xs text-slate-500">
+            <span>CHSH Entanglement</span>
+            <span class="flex items-center gap-1 text-[11px] font-mono-num text-indigo-600 font-medium">
+              <span id="chsh-dot" class="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+              Limit: 2.00
+            </span>
           </div>
-          <div class="mt-2 flex items-baseline justify-between">
-            <span id="metric-chsh" class="text-2xl font-black text-indigo-600 font-mono-code">2.828</span>
-            <span id="chsh-badge" class="text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">Entangled</span>
+          <div class="my-2">
+            <span id="metric-chsh" class="text-2xl font-black text-indigo-600 font-mono-num tracking-tight">2.828</span>
           </div>
-          <p class="text-[11px] text-slate-500 mt-1">Classical Limit: <strong class="text-slate-700 font-mono-code">2.000</strong></p>
+          <div class="flex items-center justify-between text-[11px] text-slate-500">
+            <span>Security Gate: S &ge; 2.50</span>
+            <span id="chsh-badge" class="font-mono-num font-semibold text-indigo-600">Verified</span>
+          </div>
         </div>
 
-        <!-- 4. Cross-Verifier Consensus ECS_BC (Document 4) -->
-        <div class="glass-card rounded-2xl p-4 flex flex-col justify-between">
-          <div class="flex items-center justify-between text-xs text-slate-500 font-medium">
-            <span>Verifier Consensus (ECS)</span>
-            <span class="text-[10px] text-sky-600 font-mono-code">Anti-Repudiation</span>
+        <!-- Metric 4: Cross-Verifier Consensus (ECS) -->
+        <div class="q-card p-4 flex flex-col justify-between">
+          <div class="flex items-center justify-between text-xs text-slate-500">
+            <span>Verifier Consensus</span>
+            <span class="flex items-center gap-1 text-[11px] font-mono-num text-sky-600 font-medium">
+              <span id="ecs-dot" class="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
+              Gate: 0.85
+            </span>
           </div>
-          <div class="mt-2 flex items-baseline justify-between">
-            <span id="metric-ecs" class="text-2xl font-black text-sky-600 font-mono-code">1.000</span>
-            <span id="ecs-badge" class="text-xs font-bold px-2 py-0.5 rounded-full bg-sky-50 text-sky-700">Agreed</span>
+          <div class="my-2">
+            <span id="metric-ecs" class="text-2xl font-black text-sky-600 font-mono-num tracking-tight">1.000</span>
           </div>
-          <p class="text-[11px] text-slate-500 mt-1">Bob &amp; Charlie Cross-Fidelity</p>
+          <div class="flex items-center justify-between text-[11px] text-slate-500">
+            <span>Bob &amp; Charlie State Overlap</span>
+            <span id="ecs-badge" class="font-mono-num font-semibold text-sky-600">Agreed</span>
+          </div>
         </div>
 
-        <!-- 5. QKD Refresh & Link Outage (Document 4) -->
-        <div class="glass-card rounded-2xl p-4 flex flex-col justify-between">
-          <div class="flex items-center justify-between text-xs text-slate-500 font-medium">
-            <span>Session Refresh (T_ref)</span>
-            <span class="text-[10px] text-emerald-600 font-mono-code font-bold">450 kbps</span>
+        <!-- Metric 5: Session Refresh & Cache -->
+        <div class="q-card p-4 flex flex-col justify-between">
+          <div class="flex items-center justify-between text-xs text-slate-500">
+            <span>Session Refresh</span>
+            <span class="flex items-center gap-1 text-[11px] font-mono-num text-emerald-600 font-medium">
+              <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+              450 kbps
+            </span>
           </div>
-          <div class="mt-2 flex items-baseline justify-between">
-            <span id="metric-tref" class="text-xl font-black text-slate-900 font-mono-code">0.28 sec</span>
-            <span id="metric-outage" class="text-[10px] font-mono-code text-slate-400">P_out: 0.0%</span>
+          <div class="my-2">
+            <span id="metric-tref" class="text-2xl font-black text-slate-900 font-mono-num tracking-tight">0.28s</span>
           </div>
-          <p class="text-[11px] text-slate-500 mt-1">Bell Key Sustain Rate</p>
+          <div class="flex items-center justify-between text-[11px] text-slate-500">
+            <span>Anti-Replay Cache</span>
+            <span id="metric-outage" class="font-mono-num text-slate-600">Active</span>
+          </div>
         </div>
+
       </div>
 
-      <!-- MAIN SPLIT: RED-TEAM INJECTOR (LEFT) vs BLUE-TEAM TELEMETRY (RIGHT) -->
+      <!-- MAIN SPLIT: CONTROLS (LEFT 5 COLS) vs BLUE-TEAM DETECTION (RIGHT 7 COLS) -->
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
         <!-- ============================================== -->
-        <!-- LEFT: RED-TEAM ADVERSARIAL ATTACK LAUNCHER (5 Cols) -->
+        <!-- LEFT COLUMN: CONTROLS & ATTACK LAUNCHER (5 Cols) -->
         <!-- ============================================== -->
-        <div class="lg:col-span-5 glass-card rounded-2xl p-5 bg-white border border-slate-200 flex flex-col justify-between space-y-4">
+        <div class="lg:col-span-5 q-card p-5 space-y-4 flex flex-col justify-between">
+          
           <div>
-            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <div class="flex items-center justify-between pb-2.5 border-b border-slate-100">
               <div class="flex items-center space-x-2">
-                <span class="w-3 h-3 rounded-full bg-rose-500"></span>
-                <h3 class="text-sm font-black text-slate-900 uppercase tracking-wider">Red-Team Cyber Threat Launcher</h3>
+                <span class="w-2.5 h-2.5 rounded-full bg-rose-500"></span>
+                <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wider">Attack Scenarios</h3>
               </div>
-              <span class="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-50 text-rose-700 border border-rose-200">Adversary Simulator</span>
+              <span id="active-atk-pill" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">Baseline</span>
             </div>
-            <p class="text-xs text-slate-500 mt-1.5">Inject synthetic adversary perturbations directly into the quantum teleportation channel to evaluate detection rules.</p>
-          </div>
 
-          <!-- Attack Scenarios Grid -->
-          <div class="space-y-1.5">
-            <label class="block text-[11px] font-bold text-slate-700 uppercase tracking-wider">Select Attack Scenario:</label>
-            <div class="grid grid-cols-2 gap-2">
-              <button onclick="selectAttack('NONE')" id="btn-atk-NONE" class="atk-btn p-2.5 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-800 text-xs font-semibold text-left transition hover:shadow-sm">
+            <!-- 2x4 Grid of Attack Cards -->
+            <div class="grid grid-cols-2 gap-2 mt-3">
+              <!-- NONE -->
+              <div onclick="selectAttack('NONE')" id="btn-atk-NONE" class="atk-card active-safe p-2.5">
                 <div class="flex items-center space-x-1.5">
                   <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                  <span class="font-bold">Legitimate</span>
+                  <span class="text-xs font-bold text-slate-900">Legitimate</span>
                 </div>
-                <div class="text-[10px] text-emerald-600 mt-0.5">Uncorrupted Alice & Bob</div>
-              </button>
+                <div class="text-[10px] text-slate-500 mt-0.5 truncate">Honest Alice &amp; Bob</div>
+              </div>
 
-              <button onclick="selectAttack('FORGERY')" id="btn-atk-FORGERY" class="atk-btn p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold text-left transition hover:shadow-sm">
+              <!-- FORGERY -->
+              <div onclick="selectAttack('FORGERY')" id="btn-atk-FORGERY" class="atk-card p-2.5">
                 <div class="flex items-center space-x-1.5">
                   <span class="w-2 h-2 rounded-full bg-rose-500"></span>
-                  <span class="font-bold">1. Signature Forgery</span>
+                  <span class="text-xs font-bold text-slate-900">1. Signature Forgery</span>
                 </div>
-                <div class="text-[10px] text-slate-500 mt-0.5">Altered M & key guessing</div>
-              </button>
+                <div class="text-[10px] text-slate-500 mt-0.5 truncate">Tampered M &amp; key guess</div>
+              </div>
 
-              <button onclick="selectAttack('IMPERSONATION')" id="btn-atk-IMPERSONATION" class="atk-btn p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold text-left transition hover:shadow-sm">
+              <!-- IMPERSONATION -->
+              <div onclick="selectAttack('IMPERSONATION')" id="btn-atk-IMPERSONATION" class="atk-card p-2.5">
                 <div class="flex items-center space-x-1.5">
                   <span class="w-2 h-2 rounded-full bg-amber-500"></span>
-                  <span class="font-bold">2. Impersonation</span>
+                  <span class="text-xs font-bold text-slate-900">2. Impersonation</span>
                 </div>
-                <div class="text-[10px] text-slate-500 mt-0.5">Unentangled Alice (S &le; 2.0)</div>
-              </button>
+                <div class="text-[10px] text-slate-500 mt-0.5 truncate">Unentangled Alice (S &le; 2.0)</div>
+              </div>
 
-              <button onclick="selectAttack('INTERCEPT_RESEND')" id="btn-atk-INTERCEPT_RESEND" class="atk-btn p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold text-left transition hover:shadow-sm">
+              <!-- INTERCEPT_RESEND -->
+              <div onclick="selectAttack('INTERCEPT_RESEND')" id="btn-atk-INTERCEPT_RESEND" class="atk-card p-2.5">
                 <div class="flex items-center space-x-1.5">
                   <span class="w-2 h-2 rounded-full bg-purple-500"></span>
-                  <span class="font-bold">3. Channel MitM</span>
+                  <span class="text-xs font-bold text-slate-900">3. Channel MitM</span>
                 </div>
-                <div class="text-[10px] text-slate-500 mt-0.5">Z-Basis Intercept-Resend</div>
-              </button>
+                <div class="text-[10px] text-slate-500 mt-0.5 truncate">Z-Basis Intercept-Resend</div>
+              </div>
 
-              <button onclick="selectAttack('REPLAY')" id="btn-atk-REPLAY" class="atk-btn p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold text-left transition hover:shadow-sm">
+              <!-- REPLAY -->
+              <div onclick="selectAttack('REPLAY')" id="btn-atk-REPLAY" class="atk-card p-2.5">
                 <div class="flex items-center space-x-1.5">
                   <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
-                  <span class="font-bold">4. Transcript Replay</span>
+                  <span class="text-xs font-bold text-slate-900">4. Transcript Replay</span>
                 </div>
-                <div class="text-[10px] text-slate-500 mt-0.5">Reusing monotonic SID</div>
-              </button>
+                <div class="text-[10px] text-slate-500 mt-0.5 truncate">Reusing monotonic SID</div>
+              </div>
 
-              <button onclick="selectAttack('UNAUTHORIZED_PROBE')" id="btn-atk-UNAUTHORIZED_PROBE" class="atk-btn p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold text-left transition hover:shadow-sm">
+              <!-- UNAUTHORIZED_PROBE -->
+              <div onclick="selectAttack('UNAUTHORIZED_PROBE')" id="btn-atk-UNAUTHORIZED_PROBE" class="atk-card p-2.5">
                 <div class="flex items-center space-x-1.5">
                   <span class="w-2 h-2 rounded-full bg-cyan-500"></span>
-                  <span class="font-bold">5. Canary Probe</span>
+                  <span class="text-xs font-bold text-slate-900">5. Canary Probe</span>
                 </div>
-                <div class="text-[10px] text-slate-500 mt-0.5">Pre-signing memory probe</div>
-              </button>
+                <div class="text-[10px] text-slate-500 mt-0.5 truncate">Pre-signing register tap</div>
+              </div>
 
-              <button onclick="selectAttack('WEAK_INTERCEPT')" id="btn-atk-WEAK_INTERCEPT" class="atk-btn p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold text-left transition hover:shadow-sm">
+              <!-- WEAK_INTERCEPT -->
+              <div onclick="selectAttack('WEAK_INTERCEPT')" id="btn-atk-WEAK_INTERCEPT" class="atk-card p-2.5">
                 <div class="flex items-center space-x-1.5">
                   <span class="w-2 h-2 rounded-full bg-orange-500"></span>
-                  <span class="font-bold">6. Weak Tap (Grover)</span>
+                  <span class="text-xs font-bold text-slate-900">6. Weak Tap</span>
                 </div>
-                <div class="text-[10px] text-slate-500 mt-0.5">Subtle 12% fiber eavesdrop</div>
-              </button>
+                <div class="text-[10px] text-slate-500 mt-0.5 truncate">Subtle fiber tap (Grover)</div>
+              </div>
 
-              <button onclick="selectAttack('REPUDIATION')" id="btn-atk-REPUDIATION" class="atk-btn p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold text-left transition hover:shadow-sm">
+              <!-- REPUDIATION -->
+              <div onclick="selectAttack('REPUDIATION')" id="btn-atk-REPUDIATION" class="atk-card p-2.5">
                 <div class="flex items-center space-x-1.5">
                   <span class="w-2 h-2 rounded-full bg-pink-500"></span>
-                  <span class="font-bold">7. Repudiation</span>
+                  <span class="text-xs font-bold text-slate-900">7. Repudiation</span>
                 </div>
-                <div class="text-[10px] text-slate-500 mt-0.5">Bob vs Charlie split</div>
-              </button>
+                <div class="text-[10px] text-slate-500 mt-0.5 truncate">Bob vs Charlie split</div>
+              </div>
             </div>
           </div>
 
           <!-- Parameter Sliders -->
           <div class="space-y-3 pt-3 border-t border-slate-100">
+            <!-- Key Length L (Up to 1024) -->
             <div>
-              <div class="flex justify-between text-xs font-semibold text-slate-700 mb-1">
-                <span>Security Parameter (Key Length L):</span>
-                <strong id="label-L" class="text-indigo-600 font-mono-code">64 qubits</strong>
+              <div class="flex justify-between text-xs font-medium text-slate-700 mb-1">
+                <span>Key Length (L):</span>
+                <strong id="label-L" class="text-indigo-600 font-mono-num font-bold">64 qubits</strong>
               </div>
-              <input type="range" id="input-L" min="16" max="512" step="16" value="64" oninput="updateL(this.value)" class="w-full accent-indigo-600 cursor-pointer">
-              <div class="flex justify-between text-[10px] text-slate-400 mt-0.5 font-mono-code">
-                <span>16</span><span>64</span><span>128</span><span>256</span><span>512</span>
+              <input type="range" id="input-L" min="16" max="1024" step="16" value="64" oninput="updateL(this.value)" class="w-full" aria-label="Key Length Slider">
+              <div class="flex justify-between text-[10px] text-slate-400 mt-0.5 font-mono-num">
+                <span>16</span><span>64</span><span>128</span><span>256</span><span>512</span><span>1024</span>
               </div>
             </div>
 
+            <!-- Optical Fiber Noise -->
             <div>
-              <div class="flex justify-between text-xs font-semibold text-slate-700 mb-1">
-                <span>Fiber Channel Noise (p_err):</span>
-                <strong id="label-noise" class="text-sky-600 font-mono-code">1.0%</strong>
+              <div class="flex justify-between text-xs font-medium text-slate-700 mb-1">
+                <span>Fiber Channel Noise:</span>
+                <strong id="label-noise" class="text-sky-600 font-mono-num font-bold">1.0%</strong>
               </div>
-              <input type="range" id="input-noise" min="0" max="0.25" step="0.01" value="0.01" oninput="updateNoise(this.value)" class="w-full accent-sky-600 cursor-pointer">
+              <input type="range" id="input-noise" min="0" max="0.25" step="0.01" value="0.01" oninput="updateNoise(this.value)" class="w-full" aria-label="Fiber Channel Noise Slider">
             </div>
 
+            <!-- Message Input -->
             <div>
-              <label class="block text-xs font-semibold text-slate-700 mb-1">Message Payload:</label>
-              <input type="text" id="input-msg" value="Pay $10,000,000 via Quantum Settlement Wire" class="w-full text-xs px-3 py-2 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white font-mono-code">
+              <label for="input-msg" class="block text-xs font-medium text-slate-700 mb-1">Transaction Message:</label>
+              <input type="text" id="input-msg" value="Pay $10,000,000 via Quantum Settlement Wire" class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white font-mono-num text-slate-800">
             </div>
           </div>
 
-          <!-- Action Launch Button -->
-          <button onclick="runSimulation()" id="btn-run" class="w-full py-3 rounded-xl bg-gradient-to-r from-indigo-600 via-sky-600 to-emerald-600 hover:from-indigo-700 hover:to-emerald-700 text-white font-bold text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition flex items-center justify-center space-x-2">
+          <!-- Protocol Stepper & WebSocket Indicator -->
+          <div class="pt-2 border-t border-slate-100 space-y-2">
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-slate-600 font-medium flex items-center space-x-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 dot-pulse"></span>
+                <span>Live Streaming Telemetry</span>
+              </span>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="toggle-ws-telemetry" checked class="sr-only peer">
+                <div class="w-7 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-indigo-600"></div>
+              </label>
+            </div>
+
+            <!-- 5-Step Stepper Lights -->
+            <div class="grid grid-cols-5 gap-1 text-[10px] font-mono-num text-center">
+              <div id="step-1" class="py-1 px-1 rounded-md bg-slate-100 text-slate-500 font-semibold transition-colors">1. KeyGen</div>
+              <div id="step-2" class="py-1 px-1 rounded-md bg-slate-100 text-slate-500 font-semibold transition-colors">2. CHSH</div>
+              <div id="step-3" class="py-1 px-1 rounded-md bg-slate-100 text-slate-500 font-semibold transition-colors">3. Teleport</div>
+              <div id="step-4" class="py-1 px-1 rounded-md bg-slate-100 text-slate-500 font-semibold transition-colors">4. Measure</div>
+              <div id="step-5" class="py-1 px-1 rounded-md bg-slate-100 text-slate-500 font-semibold transition-colors">5. Decide</div>
+            </div>
+            <div id="ws-step-text" class="text-[11px] text-slate-500 font-mono-num truncate text-center">System Idle. Press execute to run verification.</div>
+          </div>
+
+          <!-- Execute Button -->
+          <button onclick="runSimulation()" id="btn-run" class="w-full py-2.5 rounded-xl text-white font-bold text-xs uppercase tracking-wider shadow-sm btn-shimmer flex items-center justify-center space-x-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <span>Execute Quantum Verification Pipeline</span>
+            <span id="btn-run-text">Execute Verification Pipeline</span>
           </button>
+
         </div>
 
         <!-- ============================================== -->
-        <!-- RIGHT: BLUE-TEAM DETECTION & TELEMETRY (7 Cols) -->
+        <!-- RIGHT COLUMN: BLUE-TEAM TELEMETRY (7 Cols)     -->
         <!-- ============================================== -->
-        <div class="lg:col-span-7 space-y-6">
+        <div class="lg:col-span-7 space-y-4">
 
-          <!-- THREAT ALERT / VERIFICATION DECISION BANNER -->
-          <div id="decision-alert-banner" class="glass-card rounded-2xl p-5 bg-white border border-slate-200 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <!-- VERDICT / SECURITY ALERT CARD -->
+          <div id="decision-alert-banner" class="q-card p-4.5 border-l-4 border-l-emerald-500 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div class="flex items-start space-x-3.5">
-              <div id="banner-icon-bg" class="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-emerald-100 text-emerald-600">
-                <svg id="banner-icon" class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+              <div id="banner-icon-bg" class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-emerald-50 text-emerald-600 border border-emerald-200">
+                <svg id="banner-icon" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 13l4 4L19 7"></path></svg>
               </div>
-              <div>
+              <div class="min-w-0">
                 <div class="flex items-center space-x-2">
-                  <h3 id="banner-title" class="text-base font-black text-emerald-800">Deterministic Signature Acceptance</h3>
-                  <span id="banner-badge" class="px-2 py-0.5 text-xs font-bold rounded bg-emerald-100 text-emerald-800">VALID SIGNATURE</span>
+                  <h3 id="banner-title" class="text-sm font-bold text-slate-900 truncate">Deterministic Signature Acceptance</h3>
+                  <span id="banner-badge" class="px-2 py-0.5 text-[10px] font-bold rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase">VALID</span>
                 </div>
-                <p id="banner-desc" class="text-xs text-slate-600 mt-1">Signature verified authentic! QBER=0.00% &le; T_v (12.00%) and Bell entanglement verified (S=2.828 &ge; 2.50).</p>
-                <div class="mt-2 flex flex-wrap items-center gap-2 text-xs">
-                  <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-mono-code text-[11px]">
-                    Trigger: <strong id="banner-rule" class="text-indigo-600">QBER &le; T_v AND S &ge; S_min</strong>
+                <p id="banner-desc" class="text-xs text-slate-600 mt-1 line-clamp-2">Signature verified authentic: QBER=0.00% &le; T_v (12%) and Bell entanglement verified (S=2.828 &ge; 2.50).</p>
+                <div class="mt-2 flex flex-wrap items-center gap-2 text-[11px]">
+                  <span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-mono-num">
+                    Rule: <strong id="banner-rule" class="text-indigo-600">QBER &le; T_v, S &ge; 2.50</strong>
                   </span>
-                  <span class="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-mono-code text-[11px]">
-                    Session: <strong id="banner-sid" class="text-slate-800">SID-INIT</strong>
+                  <span class="px-2 py-0.5 rounded-md bg-slate-100 text-slate-700 font-mono-num truncate max-w-[200px]" title="Session ID">
+                    SID: <strong id="banner-sid" class="text-slate-800">SID-INIT</strong>
                   </span>
                 </div>
               </div>
             </div>
-            <div class="text-right shrink-0">
-              <div class="text-[11px] text-slate-400 font-semibold">Information-Theoretic Security</div>
-              <div id="banner-bits" class="text-xl font-black text-slate-800 font-mono-code">> 128 Bits</div>
-              <div class="text-[10px] text-emerald-600 font-bold mt-0.5">Zero Heuristic False Positives</div>
+            <div class="sm:text-right shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 w-full sm:w-auto flex sm:flex-col justify-between items-center sm:items-end">
+              <div class="text-[10px] text-slate-400 font-medium">Security Margin</div>
+              <div id="banner-bits" class="text-lg font-black text-slate-800 font-mono-num">> 37.4 Bits</div>
+              <div class="text-[10px] text-emerald-600 font-semibold">Zero False Positives</div>
             </div>
           </div>
 
-          <!-- PLOTLY 3D BLOCH SPHERE CONTAINER -->
-          <div class="glass-card rounded-2xl p-5 bg-white border border-slate-200">
-            <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-              <div>
-                <h3 class="text-sm font-bold text-slate-900 flex items-center space-x-2">
-                  <span class="w-2.5 h-2.5 rounded-full bg-indigo-600"></span>
-                  <span>Plotly 3D Interactive Bloch Sphere Visualizer</span>
-                </h3>
-                <p class="text-[11px] text-slate-500">Full 3D rotation, statevector trajectory, and 6-state Pauli poles</p>
+          <!-- 3D BLOCH SPHERE VISUALIZER -->
+          <div class="q-card p-4">
+            <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+              <div class="flex items-center space-x-2">
+                <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                <h3 class="text-xs font-bold text-slate-900">3D Bloch Sphere Visualizer</h3>
+                <span class="text-[11px] text-slate-400">&bull; 6-State Pauli Eigenstates</span>
               </div>
-              <span class="text-[10px] font-mono-code px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-bold">Orbit &amp; Zoom</span>
+              <span id="bloch-state-label" class="text-[11px] font-mono-num px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 font-semibold">|0⟩ (+Z)</span>
             </div>
 
-            <div id="plotlyBloch" class="w-full h-72 my-2"></div>
+            <!-- Fixed Height Centered 3D Canvas -->
+            <div id="plotlyBloch" class="w-full h-[280px]"></div>
 
             <div class="grid grid-cols-3 gap-2 text-center text-xs pt-2 border-t border-slate-100">
               <div class="p-1.5 rounded-lg bg-slate-50 border border-slate-100">
-                <span class="text-[10px] text-slate-400 block font-mono-code">&sigma;_z (Comp.)</span>
-                <strong class="text-slate-800 font-mono-code">|0⟩ / |1⟩</strong>
+                <span class="text-[10px] text-slate-400 block font-mono-num">&sigma;_z (Comp.)</span>
+                <strong class="text-slate-800 font-mono-num text-[11px]">|0⟩ / |1⟩</strong>
               </div>
               <div class="p-1.5 rounded-lg bg-slate-50 border border-slate-100">
-                <span class="text-[10px] text-slate-400 block font-mono-code">&sigma;_x (Hadamard)</span>
-                <strong class="text-indigo-600 font-mono-code">|+⟩ / |-⟩</strong>
+                <span class="text-[10px] text-slate-400 block font-mono-num">&sigma;_x (Hadamard)</span>
+                <strong class="text-indigo-600 font-mono-num text-[11px]">|+⟩ / |-⟩</strong>
               </div>
               <div class="p-1.5 rounded-lg bg-slate-50 border border-slate-100">
-                <span class="text-[10px] text-slate-400 block font-mono-code">&sigma;_y (Circular)</span>
-                <strong class="text-cyan-600 font-mono-code">|+i⟩ / |-i⟩</strong>
+                <span class="text-[10px] text-slate-400 block font-mono-num">&sigma;_y (Circular)</span>
+                <strong class="text-cyan-600 font-mono-num text-[11px]">|+i⟩ / |-i⟩</strong>
               </div>
             </div>
           </div>
 
-          <!-- GROVER AMPLIFICATION & CONJUGATE BASIS BREAKDOWN ROW -->
+          <!-- CONJUGATE BASIS ERRORS & GROVER AMPLIFIER (Equal Heights) -->
           <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <!-- Left: Basis Error Breakdown Chart -->
-            <div class="glass-card rounded-2xl p-4 bg-white border border-slate-200">
+            
+            <!-- Left: Basis Error Chart -->
+            <div class="q-card p-4 flex flex-col justify-between">
               <div class="flex items-center justify-between pb-2 border-b border-slate-100">
                 <h4 class="text-xs font-bold text-slate-800">Conjugate Basis Errors</h4>
-                <span id="metric-asym" class="text-[11px] font-mono-code text-indigo-600 font-bold">&Delta;E: 0.0%</span>
+                <span id="metric-asym" class="text-[11px] font-mono-num text-indigo-600 font-bold">&Delta;E: 0.0%</span>
               </div>
-              <div id="plotlyBasisChart" class="w-full h-44"></div>
+              <div id="plotlyBasisChart" class="w-full h-36"></div>
+              <div class="text-[10px] text-slate-400 flex justify-between pt-1 border-t border-slate-100">
+                <span>Threshold: &Delta;E &le; 15%</span>
+                <span class="font-mono-num text-slate-600">MUB Fidelity</span>
+              </div>
             </div>
 
-            <!-- Right: Grover Weak Disturbance Amplification Card (Document 4) -->
-            <div class="glass-card rounded-2xl p-4 bg-white border border-slate-200 flex flex-col justify-between">
+            <!-- Right: Grover Anomaly Amplifier -->
+            <div class="q-card p-4 flex flex-col justify-between">
               <div>
                 <div class="flex items-center justify-between pb-2 border-b border-slate-100">
-                  <h4 class="text-xs font-bold text-slate-800">Grover Weak Anomaly Amplifier</h4>
-                  <span id="grover-flag" class="text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600">Inactive</span>
+                  <h4 class="text-xs font-bold text-slate-800">Grover Weak Disturbance Amplifier</h4>
+                  <span id="grover-flag" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">Inactive</span>
                 </div>
-                <p class="text-[11px] text-slate-500 mt-1.5">Rotates amplitudes $a_j(t+1) = a_j(t)[1 + \eta(E_j - \mu_E)]$ to expose subtle fiber taps.</p>
+                <p class="text-[11px] text-slate-500 mt-1">Exposes subtle channel taps via amplitude rotations: a_j(t+1) = a_j(t) &middot; [1 + &eta;(E_j - &mu;_E)].</p>
               </div>
 
-              <div class="my-3 space-y-2">
+              <div class="my-2 space-y-1.5">
                 <div class="flex justify-between text-xs">
                   <span class="text-slate-500">Raw Channel QBER:</span>
-                  <strong id="lbl-grover-raw" class="font-mono-code text-slate-800">0.00%</strong>
+                  <strong id="lbl-grover-raw" class="font-mono-num text-slate-800">0.00%</strong>
                 </div>
                 <div class="flex justify-between text-xs">
-                  <span class="text-slate-500">Grover Amplified Score:</span>
-                  <strong id="lbl-grover-amp" class="font-mono-code text-rose-600 font-bold">0.00%</strong>
+                  <span class="text-slate-500">Amplified Anomaly Score:</span>
+                  <strong id="lbl-grover-amp" class="font-mono-num text-rose-600 font-bold">0.00%</strong>
                 </div>
-                <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                  <div id="grover-bar" class="bg-indigo-600 h-2 rounded-full transition-all duration-500" style="width: 0%"></div>
+                <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                  <div id="grover-bar" class="bg-indigo-600 h-1.5 rounded-full transition-all duration-300" style="width: 0%"></div>
                 </div>
               </div>
 
-              <div class="text-[10px] text-slate-400 font-mono-code flex justify-between pt-2 border-t border-slate-100">
+              <div class="text-[10px] text-slate-400 font-mono-num flex justify-between pt-1 border-t border-slate-100">
                 <span>Gain Factor: <strong id="lbl-grover-gain" class="text-slate-700">1.0x</strong></span>
                 <span>G = 3 Rotations</span>
               </div>
             </div>
+
           </div>
 
         </div>
       </div>
 
       <!-- BOTTOM ROW: SAMPLE QUBIT TELEMETRY CHIPS -->
-      <div class="glass-card rounded-2xl p-5 bg-white border border-slate-200">
-        <div class="flex items-center justify-between pb-3 border-b border-slate-100 mb-3">
-          <div>
-            <h3 class="text-sm font-bold text-slate-900 flex items-center space-x-2">
-              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
-              <span>Teleported Qubit Telemetry & Pauli Correction Log (First 8 Qubits)</span>
-            </h3>
-            <p class="text-[11px] text-slate-500">State Preparation &bull; Alice Bell Projection $(c_j)$ &bull; Bob Unitary Pauli Correction $U(c_j)$ &bull; Projective Born Rule</p>
+      <div class="q-card p-4">
+        <div class="flex items-center justify-between pb-2.5 border-b border-slate-100 mb-3">
+          <div class="flex items-center space-x-2">
+            <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+            <h3 class="text-xs font-bold text-slate-900">Teleported Qubit Telemetry &amp; Pauli Unitary Corrections</h3>
+            <span class="text-[11px] text-slate-400 hidden sm:inline">&bull; Click chip to inspect state on Bloch sphere</span>
           </div>
-          <span class="text-xs text-slate-500 font-mono-code">Key Length: <strong id="lbl-total-qubits" class="text-slate-900 font-bold">64</strong> qubits</span>
+          <span class="text-xs text-slate-500 font-mono-num">L = <strong id="lbl-total-qubits" class="text-slate-900 font-bold">64</strong></span>
         </div>
 
-        <div id="qubits-chip-container" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-          <!-- Populated via JavaScript -->
+        <div id="qubits-chip-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
+          <!-- Populated dynamically -->
         </div>
       </div>
 
@@ -473,30 +682,30 @@
     <!-- ======================================================== -->
     <!-- TAB 2: 7-ATTACK THREAT DETECTION MATRIX                  -->
     <!-- ======================================================== -->
-    <div id="tab-matrix" class="hidden space-y-6">
-      <div class="glass-card rounded-2xl p-6 bg-white">
-        <div class="flex items-center justify-between pb-4 border-b border-slate-200">
+    <div id="tab-matrix" class="hidden space-y-4">
+      <div class="q-card p-5">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
           <div>
-            <h2 class="text-base font-bold text-slate-900">7-Attack Cyber Threat Detection Matrix</h2>
-            <p class="text-xs text-slate-500 mt-1">Evaluates all 5 base threats + Document 4 innovations (Weak Eavesdropping &amp; Multi-Receiver Repudiation).</p>
+            <h2 class="text-sm font-bold text-slate-900">Threat Detection Matrix</h2>
+            <p class="text-xs text-slate-500 mt-0.5">Comprehensive benchmark across all 7 cyber threat scenarios and legitimate baseline.</p>
           </div>
-          <button onclick="fetchAttackMatrix()" class="px-4 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-xs transition border border-indigo-200">
-            Re-run All 7 Scenarios
+          <button onclick="fetchAttackMatrix()" class="px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-xs transition border border-indigo-200">
+            Recompute Matrix
           </button>
         </div>
 
-        <div class="mt-4 overflow-x-auto">
+        <div class="mt-3 overflow-x-auto">
           <table class="w-full text-left text-xs border-collapse">
             <thead>
-              <tr class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
-                <th class="py-3 px-4">Threat Vector</th>
-                <th class="py-3 px-4">Attack Mechanism</th>
-                <th class="py-3 px-4">Empirical QBER</th>
-                <th class="py-3 px-4">CHSH (S)</th>
-                <th class="py-3 px-4">Basis &Delta;E</th>
-                <th class="py-3 px-4">Adaptive Enforcement</th>
-                <th class="py-3 px-4">Deterministic Decision</th>
-                <th class="py-3 px-4">Confidence</th>
+              <tr class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 sticky-tbl-header">
+                <th class="py-2.5 px-3">Threat Vector</th>
+                <th class="py-2.5 px-3">Attack Mechanism</th>
+                <th class="py-2.5 px-3 font-mono-num">QBER</th>
+                <th class="py-2.5 px-3 font-mono-num">CHSH (S)</th>
+                <th class="py-2.5 px-3 font-mono-num">Basis &Delta;E</th>
+                <th class="py-2.5 px-3">Enforcement</th>
+                <th class="py-2.5 px-3">Decision</th>
+                <th class="py-2.5 px-3 font-mono-num">Confidence</th>
               </tr>
             </thead>
             <tbody id="matrix-tbody" class="divide-y divide-slate-100">
@@ -508,30 +717,32 @@
     </div>
 
     <!-- ======================================================== -->
-    <!-- TAB 3: SCIPY BOUNDS & BENCHMARKS                         -->
+    <!-- TAB 3: STATISTICAL BENCHMARKS                            -->
     <!-- ======================================================== -->
-    <div id="tab-benchmarks" class="hidden space-y-6">
-      <div class="glass-card rounded-2xl p-6 bg-white">
-        <div class="flex items-center justify-between pb-4 border-b border-slate-200">
+    <div id="tab-benchmarks" class="hidden space-y-4">
+      <div class="q-card p-5">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
           <div>
-            <h2 class="text-base font-bold text-slate-900">SciPy Exact Statistical Bounds &amp; O(L) Scaling</h2>
-            <p class="text-xs text-slate-500 mt-1">SciPy Binomial CDF exact curves vs Hoeffding upper bounds, and linear verification time complexity.</p>
+            <h2 class="text-sm font-bold text-slate-900">Statistical Bounds &amp; O(L) Scaling Benchmarks</h2>
+            <p class="text-xs text-slate-500 mt-0.5">Exact binomial CDF vs Chernoff-Hoeffding bounds, and linear verification time complexity.</p>
           </div>
-          <button onclick="fetchBenchmarks()" class="px-4 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-xs transition border border-indigo-200">
-            Recompute Benchmark Sweep
+          <button onclick="fetchBenchmarks()" class="px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-xs transition border border-indigo-200">
+            Recompute Sweep
           </button>
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
-          <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50">
-            <h4 class="text-xs font-bold text-slate-800 mb-1">Linear Post-Processing Runtime O(L)</h4>
-            <p class="text-[11px] text-slate-500 mb-3">Sub-millisecond software simulation speedup over classical RSA $O(k^3)$</p>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mt-4">
+          <!-- Latency Chart -->
+          <div class="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+            <h4 class="text-xs font-bold text-slate-800 mb-0.5">Linear Runtime Scaling O(L)</h4>
+            <p class="text-[11px] text-slate-500 mb-2">Deterministic linear scaling compared to classical public-key RSA O(k³).</p>
             <div id="plotlyLatencyChart" class="w-full h-64"></div>
           </div>
 
-          <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50">
-            <h4 class="text-xs font-bold text-slate-800 mb-1">Exponential Forgery Bound $\log_{10}(P_{\text{forge}})$</h4>
-            <p class="text-[11px] text-slate-500 mb-3">SciPy exact binomial CDF vs Hoeffding upper bound vs theoretical $(2/3)^L$</p>
+          <!-- Scaling Chart with Legend Above Plot -->
+          <div class="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+            <h4 class="text-xs font-bold text-slate-800 mb-0.5">Exponential Forgery Bound log₁₀(P_forge)</h4>
+            <p class="text-[11px] text-slate-500 mb-2">Exact binomial CDF vs Chernoff-Hoeffding upper bound vs theoretical (2/3)^L.</p>
             <div id="plotlyScalingChart" class="w-full h-64"></div>
           </div>
         </div>
@@ -539,112 +750,282 @@
     </div>
 
     <!-- ======================================================== -->
-    <!-- TAB 4: MATHEMATICAL PROOFS (ITS)                         -->
+    <!-- TAB 4: SECURITY PROOFS                                   -->
     <!-- ======================================================== -->
-    <div id="tab-theory" class="hidden space-y-6">
-      <div class="glass-card rounded-2xl p-6 bg-white">
-        <div class="pb-4 border-b border-slate-200">
-          <h2 class="text-base font-bold text-slate-900">Formal Mathematical Modelling &amp; Security Proof Report</h2>
-          <p class="text-xs text-slate-500 mt-1">Complete analytical derivations of Information-Theoretic Security ($P_{\text{forge}} \le 2^{-cL}$), Bell Monogamy, and Non-Repudiation.</p>
+    <div id="tab-theory" class="hidden space-y-4">
+      <div class="q-card p-5">
+        <div class="pb-3 border-b border-slate-100">
+          <h2 class="text-sm font-bold text-slate-900">Information-Theoretic Security Proofs</h2>
+          <p class="text-xs text-slate-500 mt-0.5">Formal analytical derivations of no-cloning bounds, Bell monogamy, and non-repudiation.</p>
         </div>
 
-        <div id="theory-content" class="mt-6 prose prose-slate max-w-none text-xs leading-relaxed space-y-4">
-          <!-- Filled dynamically -->
+        <div id="theory-content" class="mt-4 text-xs leading-relaxed space-y-4">
+          <!-- Populated dynamically -->
         </div>
       </div>
     </div>
 
     <!-- ======================================================== -->
-    <!-- TAB 5: SHA-256 AUDIT LEDGER                              -->
+    <!-- TAB 5: AUDIT LEDGER                                      -->
     <!-- ======================================================== -->
-    <div id="tab-ledger" class="hidden space-y-6">
-      <div class="glass-card rounded-2xl p-6 bg-white">
-        <div class="flex items-center justify-between pb-4 border-b border-slate-200">
+    <div id="tab-ledger" class="hidden space-y-4">
+      <div class="q-card p-5">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
           <div>
-            <h2 class="text-base font-bold text-slate-900">Chained SHA-256 Cryptographic Audit Ledger</h2>
-            <p class="text-xs text-slate-500 mt-1">Immutable PBFT/Blockchain-inspired audit ledger verifying every measurement, session burn, and enforcement transition.</p>
+            <h2 class="text-sm font-bold text-slate-900">SHA-256 Cryptographic Audit Ledger</h2>
+            <p class="text-xs text-slate-500 mt-0.5">Immutable chained audit blocks tracking every session burn, measurement, and enforcement.</p>
           </div>
           <div class="flex items-center space-x-2">
-            <span id="badge-ledger-integrity" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-800">Integrity: Valid</span>
+            <span id="badge-ledger-integrity" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">Integrity: Valid</span>
             <button onclick="downloadLedgerJSON()" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition border border-slate-200">Export JSON</button>
             <button onclick="resetAuditLedger()" class="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold transition border border-rose-200">Reset</button>
           </div>
         </div>
 
-        <div class="mt-4 overflow-x-auto">
+        <div class="mt-3 overflow-x-auto">
           <table class="w-full text-left text-xs border-collapse">
             <thead>
-              <tr class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200">
+              <tr class="bg-slate-50 text-slate-600 font-semibold border-b border-slate-200 sticky-tbl-header">
                 <th class="py-2.5 px-3">Block #</th>
                 <th class="py-2.5 px-3">Session ID</th>
                 <th class="py-2.5 px-3">Enforcement</th>
                 <th class="py-2.5 px-3">Decision</th>
-                <th class="py-2.5 px-3">QBER</th>
-                <th class="py-2.5 px-3">CHSH (S)</th>
-                <th class="py-2.5 px-3">Block SHA-256 Hash</th>
+                <th class="py-2.5 px-3 font-mono-num">QBER</th>
+                <th class="py-2.5 px-3 font-mono-num">CHSH (S)</th>
+                <th class="py-2.5 px-3 font-mono-num">Block Hash</th>
               </tr>
             </thead>
-            <tbody id="ledger-tbody" class="divide-y divide-slate-100 font-mono-code text-[11px]">
-              <!-- Rendered dynamically -->
+            <tbody id="ledger-tbody" class="divide-y divide-slate-100 font-mono-num text-[11px]">
+              <!-- Populated dynamically -->
             </tbody>
           </table>
         </div>
       </div>
     </div>
 
-  </main>
-
-  <!-- QISKIT CIRCUIT VIEWER MODAL -->
-  <div id="circuitModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white rounded-2xl max-w-3xl w-full p-6 shadow-2xl border border-slate-200 space-y-4">
-      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-        <div class="flex items-center space-x-2">
-          <div class="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs">Q</div>
+    <!-- ======================================================== -->
+    <!-- TAB 6: NOISE LAB                                         -->
+    <!-- ======================================================== -->
+    <div id="tab-noise" class="hidden space-y-4">
+      <div class="q-card p-5">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
           <div>
-            <h3 class="text-sm font-bold text-slate-900">Qiskit 2.5 Quantum Teleportation Circuit</h3>
-            <p class="text-[11px] text-slate-500">3-Qubit Protocol &bull; Pauli Prep &bull; EPR Bell Entanglement &bull; Joint Bell Measurement &bull; Pauli Correction</p>
+            <h2 class="text-sm font-bold text-slate-900 flex items-center space-x-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+              <span>Open Quantum Systems Noise Laboratory</span>
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">Realistic channels: Depolarizing, T1 Amplitude Damping, T2 Phase Damping, and Pauli error gates.</p>
+          </div>
+          <span class="px-2.5 py-1 rounded-lg text-xs font-bold bg-indigo-50 text-indigo-800 border border-indigo-200">Simulation Engine</span>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 mt-4">
+          <!-- Left Controls -->
+          <div class="lg:col-span-5 space-y-3.5">
+            <div>
+              <label class="block text-xs font-semibold text-slate-700 mb-1">State Preparation Basis:</label>
+              <div class="grid grid-cols-3 gap-2">
+                <button onclick="setNoiseBasis('X')" id="btn-nb-X" class="nb-btn p-2 rounded-xl border border-indigo-300 bg-indigo-50 text-indigo-800 font-bold text-xs">|+⟩ (&sigma;_x)</button>
+                <button onclick="setNoiseBasis('Y')" id="btn-nb-Y" class="nb-btn p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs">|+i⟩ (&sigma;_y)</button>
+                <button onclick="setNoiseBasis('Z')" id="btn-nb-Z" class="nb-btn p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs">|0⟩ (&sigma;_z)</button>
+              </div>
+            </div>
+
+            <div>
+              <label for="noise-channel-select" class="block text-xs font-semibold text-slate-700 mb-1">Physical Channel Model:</label>
+              <select id="noise-channel-select" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 font-medium bg-white focus:ring-2 focus:ring-indigo-500">
+                <option value="depolarizing">Depolarizing Channel (Symmetric decoherence)</option>
+                <option value="amplitude_damping">Amplitude Damping (T1 Relaxation / Photon loss)</option>
+                <option value="phase_damping">Phase Damping (T2 Dephasing / Birefringence)</option>
+                <option value="bit_flip">Bit-Flip Channel (Pauli X)</option>
+                <option value="phase_flip">Phase-Flip Channel (Pauli Z)</option>
+              </select>
+            </div>
+
+            <div>
+              <div class="flex justify-between text-xs font-semibold text-slate-700 mb-1">
+                <span>Error Probability / Damping Rate:</span>
+                <strong id="label-noise-rate" class="text-indigo-600 font-mono-num">5.0%</strong>
+              </div>
+              <input type="range" id="input-noise-rate" min="0" max="0.40" step="0.01" value="0.05" oninput="document.getElementById('label-noise-rate').innerText = (this.value * 100).toFixed(1) + '%'" class="w-full" aria-label="Error Probability Slider">
+            </div>
+
+            <button onclick="runNoiseSimulation()" id="btn-run-noise" class="w-full py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs uppercase tracking-wider transition shadow-xs">
+              Simulate Channel Noise
+            </button>
+          </div>
+
+          <!-- Right Results Display -->
+          <div class="lg:col-span-7 bg-slate-50 rounded-2xl p-4 border border-slate-200 space-y-3">
+            <div class="grid grid-cols-3 gap-3 text-center">
+              <div class="bg-white p-3 rounded-xl border border-slate-200">
+                <span class="text-[10px] text-slate-500 block font-medium">Degraded Fidelity</span>
+                <strong id="res-noisy-fid" class="text-lg font-black text-emerald-600 font-mono-num">1.0000</strong>
+              </div>
+              <div class="bg-white p-3 rounded-xl border border-slate-200">
+                <span class="text-[10px] text-slate-500 block font-medium">State Purity Tr(&rho;²)</span>
+                <strong id="res-purity" class="text-lg font-black text-indigo-600 font-mono-num">1.0000</strong>
+              </div>
+              <div class="bg-white p-3 rounded-xl border border-slate-200">
+                <span class="text-[10px] text-slate-500 block font-medium">Bloch Radius |r|</span>
+                <strong id="res-bloch-r" class="text-lg font-black text-slate-900 font-mono-num">1.0000</strong>
+              </div>
+            </div>
+
+            <div class="bg-white p-3 rounded-xl border border-slate-200 text-xs">
+              <span class="font-bold text-slate-700 block mb-1">Kraus Channel Operator Description:</span>
+              <p id="res-channel-desc" class="text-slate-600 text-[11px] font-mono-num">Press 'Simulate Channel Noise' to evaluate density matrix decoherence.</p>
+            </div>
+
+            <div class="bg-white p-3 rounded-xl border border-slate-200 text-xs">
+              <span class="font-bold text-slate-700 block mb-1">Measurement Distribution (Shots = 1024):</span>
+              <pre id="res-counts-json" class="text-slate-600 text-[11px] font-mono-num bg-slate-50 p-2 rounded-lg border border-slate-100">Counts: {}</pre>
+            </div>
           </div>
         </div>
-        <button onclick="closeCircuitModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold">&times;</button>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- TAB 7: MULTI-PARTY SESSIONS & JWT AUTHENTICATION         -->
+    <!-- ======================================================== -->
+    <div id="tab-multiparty" class="hidden space-y-4">
+      <div class="q-card p-5">
+        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+          <div>
+            <h2 class="text-sm font-bold text-slate-900 flex items-center space-x-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              <span>Multi-Party Cryptographic Sessions &amp; JWT Identity</span>
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">Authenticates Alice (Signer), Bob (Verifier 1), and Charlie (Verifier 2) to enforce cross-node non-repudiation.</p>
+          </div>
+          <span id="badge-auth-status" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-amber-50 text-amber-800 border border-amber-200">Guest</span>
+        </div>
+
+        <!-- Entity Directory Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 mt-4" id="entities-container">
+          <!-- Rendered dynamically -->
+        </div>
+
+        <!-- Multi-Party Signature Verification Console -->
+        <div class="mt-5 pt-4 border-t border-slate-100 space-y-3">
+          <h3 class="text-xs font-bold text-slate-900 uppercase tracking-wide">Multi-Party Signature Console</h3>
+          
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <div class="md:col-span-2 space-y-1">
+              <label for="mp-input-msg" class="block text-xs font-medium text-slate-700">Contract Payload:</label>
+              <input type="text" id="mp-input-msg" value="Authorized Cross-Border Treasury Wire $25,000,000" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 font-mono-num bg-white text-slate-800">
+            </div>
+            <div class="space-y-1">
+              <label for="mp-attack-select" class="block text-xs font-medium text-slate-700">Adversarial Threat:</label>
+              <select id="mp-attack-select" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 font-medium bg-white text-slate-800">
+                <option value="NONE">NONE (Legitimate Alice &rarr; Bob &amp; Charlie)</option>
+                <option value="REPUDIATION">REPUDIATION (Alice provokes cross-node dispute)</option>
+                <option value="FORGERY">FORGERY (Eve message tampering)</option>
+              </select>
+            </div>
+          </div>
+
+          <button onclick="runMultiPartyVerification()" id="btn-run-mp" class="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-indigo-600 text-white font-bold text-xs uppercase tracking-wider shadow-xs transition hover:opacity-95">
+            Execute Multi-Party Signature (Alice &rarr; Bob &amp; Charlie)
+          </button>
+
+          <!-- Result Cards -->
+          <div id="mp-results-box" class="hidden grid grid-cols-1 md:grid-cols-3 gap-3 mt-3">
+            <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs">
+              <div class="flex justify-between font-bold text-slate-800 mb-1.5">
+                <span>Bob (Primary Verifier)</span>
+                <span id="mp-res-bob-badge" class="px-2 py-0.5 rounded text-[10px] bg-emerald-100 text-emerald-800">ACCEPTED</span>
+              </div>
+              <p class="text-slate-500">QBER: <strong id="mp-res-bob-qber" class="font-mono-num text-slate-800">0.00%</strong></p>
+            </div>
+
+            <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs">
+              <div class="flex justify-between font-bold text-slate-800 mb-1.5">
+                <span>Charlie (Consensus Node)</span>
+                <span id="mp-res-charlie-badge" class="px-2 py-0.5 rounded text-[10px] bg-emerald-100 text-emerald-800">ACCEPTED</span>
+              </div>
+              <p class="text-slate-500">QBER: <strong id="mp-res-charlie-qber" class="font-mono-num text-slate-800">0.00%</strong></p>
+            </div>
+
+            <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 text-xs">
+              <div class="flex justify-between font-bold text-slate-800 mb-1.5">
+                <span>Cross-Verifier Consensus</span>
+                <span id="mp-res-consensus-badge" class="px-2 py-0.5 rounded text-[10px] bg-emerald-100 text-emerald-800">CONSENSUS</span>
+              </div>
+              <p class="text-slate-500">ECS Risk Score: <strong id="mp-res-risk" class="font-mono-num text-slate-800">0.00</strong></p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- TOAST CONTAINER -->
+  <div id="toast-container" aria-live="polite"></div>
+
+  <!-- CIRCUIT MODAL -->
+  <div id="circuitModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="bg-white rounded-2xl max-w-2xl w-full p-5 shadow-2xl border border-slate-200 space-y-3.5">
+      <div class="flex items-center justify-between pb-2.5 border-b border-slate-100">
+        <div class="flex items-center space-x-2">
+          <div class="w-7 h-7 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs">Q</div>
+          <div>
+            <h3 id="modal-title" class="text-sm font-bold text-slate-900">Quantum Teleportation Circuit</h3>
+            <p class="text-[11px] text-slate-500">3-Qubit Protocol &bull; EPR Entanglement &bull; Joint Bell Measurement &bull; Pauli Correction</p>
+          </div>
+        </div>
+        <button onclick="closeCircuitModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold p-1" aria-label="Close Modal">&times;</button>
       </div>
 
-      <div class="bg-slate-900 text-emerald-400 font-mono-code text-xs p-4 rounded-xl overflow-x-auto">
-        <pre id="circuitAsciiText">Loading Qiskit Circuit Diagram...</pre>
+      <div class="bg-slate-900 text-emerald-400 font-mono-num text-xs p-3.5 rounded-xl overflow-x-auto">
+        <pre id="circuitAsciiText">Loading Circuit Diagram...</pre>
       </div>
 
-      <div class="flex justify-between items-center text-xs text-slate-600 pt-2 border-t border-slate-100">
-        <span id="circuitGateCounts">Gates: H, CX, X, Z</span>
-        <button onclick="closeCircuitModal()" class="px-4 py-1.5 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition">Close</button>
+      <div class="flex justify-between items-center text-xs text-slate-600 pt-1 border-t border-slate-100">
+        <span id="circuitGateCounts" class="font-mono-num text-[11px]">Gates: H, CX, X, Z</span>
+        <button onclick="closeCircuitModal()" class="px-3.5 py-1.5 rounded-lg bg-indigo-600 text-white font-semibold hover:bg-indigo-700 transition">Close</button>
       </div>
     </div>
   </div>
 
-  <!-- FOOTER -->
-  <footer class="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
-    <div class="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-      <p>Problem Statement ID: <strong>26141</strong> | Organization: <strong>Egreen Quanta LLP</strong></p>
-      <p class="text-slate-400">4-Layer Quantum-Inspired Cyber Threat Detection Framework &bull; Strictly Non-AI / ITS</p>
-    </div>
-  </footer>
-
-  <!-- APPLICATION SCRIPTS -->
+  <!-- CORE LOGIC & TELEMETRY ENGINE -->
   <script>
     let currentAttack = "NONE";
     let currentL = 64;
     let currentNoise = 0.01;
     let lastSimResult = null;
 
+    // Toast Notification Utility
+    function showToast(message, type = "info") {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      toast.className = 'toast-msg';
+      const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
+      toast.innerHTML = `<span class="font-bold text-emerald-400">${icon}</span> <span>${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(10px)';
+        setTimeout(() => toast.remove(), 300);
+      }, 3000);
+    }
+
+    // Tab Navigation
     function switchTab(tabId) {
-      const tabs = ['command-center', 'matrix', 'benchmarks', 'theory', 'ledger'];
+      const tabs = ['command-center', 'matrix', 'benchmarks', 'theory', 'ledger', 'noise', 'multiparty'];
       tabs.forEach(t => {
         const el = document.getElementById(`tab-${t}`);
         const btn = document.getElementById(`tab-btn-${t}`);
-        if (t === tabId) {
-          el.classList.remove('hidden');
-          btn.className = "py-3 px-1 border-b-2 border-indigo-600 text-indigo-600 font-bold flex items-center space-x-1.5";
-        } else {
-          el.classList.add('hidden');
-          btn.className = "py-3 px-1 border-b-2 border-transparent text-slate-500 hover:text-slate-700 flex items-center space-x-1.5";
+        if (el && btn) {
+          if (t === tabId) {
+            el.classList.remove('hidden');
+            btn.className = "py-3 px-1 border-b-2 border-indigo-600 text-indigo-600 font-bold flex items-center space-x-1.5 whitespace-nowrap";
+          } else {
+            el.classList.add('hidden');
+            btn.className = "py-3 px-1 border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 whitespace-nowrap";
+          }
         }
       });
 
@@ -652,24 +1033,39 @@
       if (tabId === 'benchmarks') fetchBenchmarks();
       if (tabId === 'theory') fetchSecurityReport();
       if (tabId === 'ledger') fetchAuditLedger();
+      if (tabId === 'noise') runNoiseSimulation();
+      if (tabId === 'multiparty') loadEntities();
     }
 
+    // Attack Scenario Selection
     function selectAttack(atk) {
       currentAttack = atk;
-      document.querySelectorAll('.atk-btn').forEach(btn => {
-        btn.className = "atk-btn p-2.5 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold text-left transition hover:shadow-sm";
+      const allButtons = document.querySelectorAll('.atk-card');
+      allButtons.forEach(btn => {
+        btn.classList.remove('active-safe', 'active-threat');
       });
+
       const activeBtn = document.getElementById(`btn-atk-${atk}`);
+      const pill = document.getElementById('active-atk-pill');
       if (activeBtn) {
         if (atk === 'NONE') {
-          activeBtn.className = "atk-btn p-2.5 rounded-xl border border-emerald-300 bg-emerald-50 text-emerald-800 text-xs font-semibold text-left transition hover:shadow-sm";
+          activeBtn.classList.add('active-safe');
+          if (pill) {
+            pill.innerText = "Baseline";
+            pill.className = "text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200";
+          }
         } else {
-          activeBtn.className = "atk-btn p-2.5 rounded-xl border border-rose-300 bg-rose-50 text-rose-800 text-xs font-semibold text-left transition hover:shadow-sm";
+          activeBtn.classList.add('active-threat');
+          if (pill) {
+            pill.innerText = atk.replace(/_/g, ' ');
+            pill.className = "text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200";
+          }
         }
       }
       runSimulation();
     }
 
+    // Sliders
     function updateL(val) {
       currentL = parseInt(val);
       document.getElementById('label-L').innerText = `${currentL} qubits`;
@@ -680,37 +1076,140 @@
       document.getElementById('label-noise').innerText = `${(currentNoise * 100).toFixed(1)}%`;
     }
 
+    // 5-Phase Stepper Visualizer
+    function setStep(stepNum, statusText) {
+      for (let i = 1; i <= 5; i++) {
+        const el = document.getElementById(`step-${i}`);
+        if (!el) continue;
+        if (i < stepNum) {
+          el.className = "py-1 px-1 rounded-md bg-emerald-100 text-emerald-800 font-bold transition-colors";
+        } else if (i === stepNum) {
+          el.className = "py-1 px-1 rounded-md bg-indigo-600 text-white font-bold transition-colors animate-pulse";
+        } else {
+          el.className = "py-1 px-1 rounded-md bg-slate-100 text-slate-500 font-semibold transition-colors";
+        }
+      }
+      const label = document.getElementById('ws-step-text');
+      if (label && statusText) label.innerText = statusText;
+    }
+
+    function resetSteps() {
+      for (let i = 1; i <= 5; i++) {
+        const el = document.getElementById(`step-${i}`);
+        if (el) el.className = "py-1 px-1 rounded-md bg-slate-100 text-slate-500 font-semibold transition-colors";
+      }
+      const label = document.getElementById('ws-step-text');
+      if (label) label.innerText = "Protocol finished. All phases verified.";
+    }
+
+    // Simulation Runner (WebSocket with HTTP Fallback)
     async function runSimulation() {
       const btn = document.getElementById('btn-run');
+      const btnText = document.getElementById('btn-run-text');
       btn.disabled = true;
-      btn.innerHTML = `<span class="animate-spin inline-block mr-1.5">&#9696;</span> Teleporting &amp; Probing...`;
+      if (btnText) btnText.innerText = "Simulating Protocol...";
 
-      const msg = document.getElementById('input-msg').value;
+      const msg = document.getElementById('input-msg').value || "Quantum Authenticated Transaction Payload";
+      const useWs = document.getElementById('toggle-ws-telemetry') && document.getElementById('toggle-ws-telemetry').checked;
 
+      const payload = {
+        message: msg,
+        L: currentL,
+        attack_type: currentAttack,
+        channel_noise: currentNoise
+      };
+
+      setStep(1, "Phase 1: Alice Pauli Eigenstate Preparation");
+
+      if (useWs && window.WebSocket) {
+        const wsProto = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        const wsUrl = `${wsProto}//${window.location.host}/ws/simulate`;
+
+        try {
+          const ws = new WebSocket(wsUrl);
+
+          ws.onopen = () => {
+            ws.send(JSON.stringify(payload));
+          };
+
+          ws.onmessage = (event) => {
+            try {
+              const data = JSON.parse(event.data);
+              if (data.event === 'PHASE_1_KEYGEN') {
+                setStep(1, "Phase 1: Pauli Preparation & Canaries");
+              } else if (data.event === 'PHASE_2_ENTANGLEMENT') {
+                setStep(2, `Phase 2: Bell Entanglement (CHSH S=${data.data.chsh_s_value})`);
+              } else if (data.event === 'PHASE_3_TELEPORTATION') {
+                setStep(3, "Phase 3: 3-Qubit Teleportation Channel");
+              } else if (data.event === 'PHASE_4_VERIFICATION') {
+                setStep(4, `Phase 4: Non-AI Measurement (QBER=${(data.data.qber * 100).toFixed(1)}%)`);
+              } else if (data.event === 'PHASE_5_CONSENSUS_LEDGER') {
+                setStep(5, "Phase 5: Consensus & SHA-256 Ledger Append");
+              } else if (data.event === 'SIMULATION_COMPLETE') {
+                resetSteps();
+                lastSimResult = data.result;
+                renderSimulationResults(data.result);
+                btn.disabled = false;
+                if (btnText) btnText.innerText = "Execute Verification Pipeline";
+                ws.close();
+              }
+            } catch (err) {
+              console.error("WebSocket payload error:", err);
+            }
+          };
+
+          ws.onerror = () => {
+            runHttpSimulation(payload, btn, btnText);
+          };
+
+          return;
+        } catch {
+          // Fall through to HTTP
+        }
+      }
+
+      await runHttpSimulation(payload, btn, btnText);
+    }
+
+    async function runHttpSimulation(payload, btn, btnText) {
       try {
+        setStep(2, "Simulating quantum channel pipeline...");
         const response = await fetch('/api/simulate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            message: msg,
-            L: currentL,
-            attack_type: currentAttack,
-            channel_noise: currentNoise
-          })
+          body: JSON.stringify(payload)
         });
 
         if (!response.ok) throw new Error(await response.text());
         const data = await response.json();
+        setStep(5, "Verifying audit ledger & consensus...");
+        resetSteps();
         lastSimResult = data;
         renderSimulationResults(data);
       } catch (err) {
-        alert("Simulation Error: " + err.message);
+        showToast("Simulation error: " + err.message, "error");
       } finally {
-        btn.disabled = false;
-        btn.innerHTML = `<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg><span>Execute Quantum Verification Pipeline</span>`;
+        if (btn) btn.disabled = false;
+        if (btnText) btnText.innerText = "Execute Verification Pipeline";
       }
     }
 
+    // Number count-up animation
+    function animateValue(id, start, end, duration, formatFn) {
+      const obj = document.getElementById(id);
+      if (!obj) return;
+      const startTime = performance.now();
+      function update(currentTime) {
+        const elapsed = currentTime - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const current = start + (end - start) * progress;
+        obj.innerText = formatFn(current);
+        if (progress < 1) requestAnimationFrame(update);
+      }
+      requestAnimationFrame(update);
+    }
+
+    // Render telemetry results
     function renderSimulationResults(data) {
       const qber = data.qber_analysis.qber;
       const sVal = data.chsh.S_value;
@@ -718,58 +1217,82 @@
       const enforcement = data.decision.enforcement_level;
       const threatType = data.decision.threat_type;
 
-      // Top Cards
-      document.getElementById('metric-decision').innerText = decision;
+      // Animate Metric Values
+      animateValue('metric-qber', 0, qber * 100, 300, v => `${v.toFixed(2)}%`);
+      animateValue('metric-chsh', 2.0, sVal, 300, v => v.toFixed(3));
+      animateValue('metric-ecs', 0.5, data.consensus.ECS_score, 300, v => v.toFixed(3));
+      animateValue('metric-tref', 0, data.qkd_refresh.t_refresh_sec, 300, v => `${v.toFixed(2)}s`);
+
       document.getElementById('badge-enforcement').innerText = enforcement;
       document.getElementById('metric-threat-type').innerText = threatType.replace(/_/g, ' ');
-      document.getElementById('metric-qber').innerText = `${(qber * 100).toFixed(2)}%`;
-      document.getElementById('metric-chsh').innerText = sVal.toFixed(3);
-      document.getElementById('metric-ecs').innerText = data.consensus.ECS_score.toFixed(3);
-      document.getElementById('metric-tref').innerText = `${data.qkd_refresh.t_refresh_sec}s`;
-      document.getElementById('metric-outage').innerText = `P_out: ${(data.qkd_refresh.outage_probability * 100).toFixed(1)}%`;
+      document.getElementById('badge-confidence').innerText = `${data.decision.confidence.toFixed(1)}%`;
       document.getElementById('lbl-total-qubits').innerText = data.key_length_L;
-      document.getElementById('lbl-block-height').innerText = `#${data.ledger_blocks_count}`;
+      
+      // Ledger height badge with pulse
+      const lblHeight = document.getElementById('lbl-block-height');
+      lblHeight.innerText = `#${data.ledger_blocks_count}`;
+      const pill = document.getElementById('header-ledger-pill');
+      if (pill) {
+        pill.classList.add('bg-indigo-50');
+        setTimeout(() => pill.classList.remove('bg-indigo-50'), 400);
+      }
 
-      // Enforcement Badge Style
+      // Enforcement Colors
       const enfBadge = document.getElementById('badge-enforcement');
-      if (enforcement === 'MONITOR') enfBadge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800";
-      else if (enforcement === 'RESTRICT') enfBadge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800";
-      else if (enforcement === 'QUARANTINE') enfBadge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-orange-100 text-orange-800";
-      else enfBadge.className = "px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800";
+      const enfDot = document.getElementById('badge-enforcement-dot');
+      if (enforcement === 'MONITOR') {
+        enfBadge.className = "text-2xl font-black text-emerald-600 font-mono-num tracking-tight";
+        enfDot.className = "w-2 h-2 rounded-full bg-emerald-500";
+      } else if (enforcement === 'RESTRICT') {
+        enfBadge.className = "text-2xl font-black text-amber-600 font-mono-num tracking-tight";
+        enfDot.className = "w-2 h-2 rounded-full bg-amber-500";
+      } else if (enforcement === 'QUARANTINE') {
+        enfBadge.className = "text-2xl font-black text-orange-600 font-mono-num tracking-tight";
+        enfDot.className = "w-2 h-2 rounded-full bg-orange-500";
+      } else {
+        enfBadge.className = "text-2xl font-black text-rose-600 font-mono-num tracking-tight";
+        enfDot.className = "w-2 h-2 rounded-full bg-rose-500";
+      }
 
-      // QBER Progress
+      // QBER Progress Bar & Dot
       const qProg = document.getElementById('qber-progress');
-      qProg.style.width = `${Math.min(100, qber * 200)}%`;
+      const qDot = document.getElementById('qber-dot');
+      qProg.style.width = `${Math.min(100, (qber / 0.30) * 100)}%`;
       if (qber <= 0.12) {
-        qProg.className = "bg-emerald-500 h-1.5 rounded-full transition-all duration-500";
-        document.getElementById('qber-badge').className = "text-xs font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-600";
-        document.getElementById('qber-badge').innerText = "Optimal";
+        qProg.className = "bg-emerald-500 h-1.5 rounded-full transition-all duration-300";
+        qDot.className = "w-1.5 h-1.5 rounded-full bg-emerald-500";
       } else {
-        qProg.className = "bg-rose-500 h-1.5 rounded-full transition-all duration-500";
-        document.getElementById('qber-badge').className = "text-xs font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-600";
-        document.getElementById('qber-badge').innerText = "Elevated";
+        qProg.className = "bg-rose-500 h-1.5 rounded-full transition-all duration-300";
+        qDot.className = "w-1.5 h-1.5 rounded-full bg-rose-500";
       }
 
-      // CHSH Badge
+      // CHSH Gate Status
+      const chshDot = document.getElementById('chsh-dot');
+      const chshBadge = document.getElementById('chsh-badge');
       if (sVal >= 2.50) {
-        document.getElementById('chsh-badge').className = "text-xs font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700";
-        document.getElementById('chsh-badge').innerText = "Entangled";
+        chshDot.className = "w-1.5 h-1.5 rounded-full bg-indigo-500";
+        chshBadge.className = "font-mono-num font-semibold text-indigo-600";
+        chshBadge.innerText = "Verified";
       } else {
-        document.getElementById('chsh-badge').className = "text-xs font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700";
-        document.getElementById('chsh-badge').innerText = "Broken";
+        chshDot.className = "w-1.5 h-1.5 rounded-full bg-rose-500";
+        chshBadge.className = "font-mono-num font-semibold text-rose-600";
+        chshBadge.innerText = "Broken";
       }
 
-      // Consensus Badge
+      // ECS Consensus Status
+      const ecsDot = document.getElementById('ecs-dot');
+      const ecsBadge = document.getElementById('ecs-badge');
       if (data.consensus.consensus_verified) {
-        document.getElementById('ecs-badge').className = "text-xs font-bold px-2 py-0.5 rounded-full bg-sky-50 text-sky-700";
-        document.getElementById('ecs-badge').innerText = "Agreed";
+        ecsDot.className = "w-1.5 h-1.5 rounded-full bg-sky-500";
+        ecsBadge.className = "font-mono-num font-semibold text-sky-600";
+        ecsBadge.innerText = "Agreed";
       } else {
-        document.getElementById('ecs-badge').className = "text-xs font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700";
-        document.getElementById('ecs-badge').innerText = "Repudiated";
+        ecsDot.className = "w-1.5 h-1.5 rounded-full bg-rose-500";
+        ecsBadge.className = "font-mono-num font-semibold text-rose-600";
+        ecsBadge.innerText = "Disputed";
       }
 
-      // Banner Rendering
-      const cardBorder = document.getElementById('card-decision-border');
+      // Decision Banner
       const banner = document.getElementById('decision-alert-banner');
       const bannerIconBg = document.getElementById('banner-icon-bg');
       const bannerIcon = document.getElementById('banner-icon');
@@ -786,49 +1309,43 @@
       bannerBits.innerText = `> ${data.hoeffding_bounds.bits_of_security} Bits`;
 
       if (decision === "ACCEPTED") {
-        cardBorder.className = "glass-card rounded-2xl p-4 flex flex-col justify-between border-l-4 border-l-emerald-500";
-        document.getElementById('metric-decision').className = "text-2xl font-black text-emerald-600";
-        banner.className = "glass-card rounded-2xl p-5 bg-white border border-emerald-200 bg-emerald-50/20 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4";
-        bannerIconBg.className = "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-emerald-100 text-emerald-600";
+        banner.className = "q-card p-4.5 border-l-4 border-l-emerald-500 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4";
+        bannerIconBg.className = "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-emerald-50 text-emerald-600 border border-emerald-200";
         bannerIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 13l4 4L19 7"></path>`;
-        bannerTitle.className = "text-base font-black text-emerald-800";
         bannerTitle.innerText = "Deterministic Signature Acceptance";
-        bannerBadge.className = "px-2 py-0.5 text-xs font-bold rounded bg-emerald-100 text-emerald-800";
-        bannerBadge.innerText = "VALID SIGNATURE";
+        bannerBadge.className = "px-2 py-0.5 text-[10px] font-bold rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase";
+        bannerBadge.innerText = "VALID";
       } else {
-        cardBorder.className = "glass-card rounded-2xl p-4 flex flex-col justify-between border-l-4 border-l-rose-500";
-        document.getElementById('metric-decision').className = "text-2xl font-black text-rose-600";
-        banner.className = "glass-card rounded-2xl p-5 bg-white border border-rose-200 bg-rose-50/25 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4";
-        bannerIconBg.className = "w-12 h-12 rounded-xl flex items-center justify-center shrink-0 bg-rose-100 text-rose-600";
+        banner.className = "q-card p-4.5 border-l-4 border-l-rose-500 animate-threat flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4";
+        bannerIconBg.className = "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-rose-50 text-rose-600 border border-rose-200";
         bannerIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>`;
-        bannerTitle.className = "text-base font-black text-rose-800";
         bannerTitle.innerText = `Threat Detected: ${threatType.replace(/_/g, ' ')}`;
-        bannerBadge.className = "px-2 py-0.5 text-xs font-bold rounded bg-rose-100 text-rose-800";
+        bannerBadge.className = "px-2 py-0.5 text-[10px] font-bold rounded-md bg-rose-50 text-rose-700 border border-rose-200 uppercase";
         bannerBadge.innerText = "REJECTED";
       }
 
-      // Grover Card
+      // Grover Card Telemetry
       const grover = data.qber_analysis.grover_amplification;
       document.getElementById('lbl-grover-raw').innerText = `${(grover.original_qber * 100).toFixed(2)}%`;
       document.getElementById('lbl-grover-amp').innerText = `${(grover.amplified_score * 100).toFixed(2)}%`;
       document.getElementById('lbl-grover-gain').innerText = `${grover.amplification_gain}x`;
-      document.getElementById('grover-bar').style.width = `${Math.min(100, grover.amplified_score * 200)}%`;
+      document.getElementById('grover-bar').style.width = `${Math.min(100, (grover.amplified_score / 0.30) * 100)}%`;
 
       const groverFlag = document.getElementById('grover-flag');
       if (grover.weak_attack_detected) {
-        groverFlag.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-700";
-        groverFlag.innerText = "Anomaly Amplified!";
+        groverFlag.className = "text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200";
+        groverFlag.innerText = "Weak Tap Alert";
       } else {
-        groverFlag.className = "text-[10px] font-bold px-2 py-0.5 rounded bg-slate-100 text-slate-600";
-        groverFlag.innerText = "Normal Baseline";
+        groverFlag.className = "text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600";
+        groverFlag.innerText = "Baseline";
       }
 
-      // Render Plotly 3D Bloch Sphere
+      // Render 3D Bloch Sphere
       if (data.sample_qubits && data.sample_qubits.length > 0) {
-        renderPlotlyBloch(data.sample_qubits[0].bloch);
+        renderPlotlyBloch(data.sample_qubits[0].bloch, data.sample_qubits[0]);
       }
 
-      // Render Basis Error Plotly Chart
+      // Render Basis Error Chart (Ensuring Non-Empty State)
       renderPlotlyBasisChart(data.qber_analysis.basis_error_rates);
 
       // Render Qubit Chips
@@ -836,95 +1353,97 @@
     }
 
     // ==========================================
-    // PLOTLY 3D BLOCH SPHERE
+    // 3D BLOCH SPHERE ENGINE (PLOTLY)
     // ==========================================
-    function renderPlotlyBloch(qubitVector) {
+    function renderPlotlyBloch(qubitVector, qubitMeta = null) {
       const vx = qubitVector ? qubitVector.x : 0.0;
       const vy = qubitVector ? qubitVector.y : 0.0;
       const vz = qubitVector ? qubitVector.z : 1.0;
 
-      // Create Unit Sphere Surface
-      const phi = [];
-      const theta = [];
-      const numSteps = 24;
-      for (let i = 0; i <= numSteps; i++) {
-        phi.push((i * Math.PI) / numSteps);
-        theta.push((i * 2 * Math.PI) / numSteps);
+      if (qubitMeta) {
+        const stateStr = qubitMeta.basis === 'Z' ? (qubitMeta.eigenvalue === 1 ? '|0⟩ (+Z)' : '|1⟩ (-Z)') :
+                         qubitMeta.basis === 'X' ? (qubitMeta.eigenvalue === 1 ? '|+⟩ (+X)' : '|-⟩ (-X)') :
+                                                   (qubitMeta.eigenvalue === 1 ? '|+i⟩ (+Y)' : '|-i⟩ (-Y)');
+        const lbl = document.getElementById('bloch-state-label');
+        if (lbl) lbl.innerText = `Qubit #${qubitMeta.index}: ${stateStr}`;
       }
-      const xSphere = [];
-      const ySphere = [];
-      const zSphere = [];
+
+      // Unit Sphere Surface Coordinates
+      const numSteps = 20;
+      const xSphere = [], ySphere = [], zSphere = [];
       for (let i = 0; i <= numSteps; i++) {
-        const rowX = [];
-        const rowY = [];
-        const rowZ = [];
+        const phi = (i * Math.PI) / numSteps;
+        const rowX = [], rowY = [], rowZ = [];
         for (let j = 0; j <= numSteps; j++) {
-          rowX.push(Math.sin(phi[i]) * Math.cos(theta[j]));
-          rowY.push(Math.sin(phi[i]) * Math.sin(theta[j]));
-          rowZ.push(Math.cos(phi[i]));
+          const theta = (j * 2 * Math.PI) / numSteps;
+          rowX.push(Math.sin(phi) * Math.cos(theta));
+          rowY.push(Math.sin(phi) * Math.sin(theta));
+          rowZ.push(Math.cos(phi));
         }
         xSphere.push(rowX);
         ySphere.push(rowY);
         zSphere.push(rowZ);
       }
 
-      // Trace 1: Semitransparent Sphere Surface
+      // 1. Transparent Wireframe Sphere
       const sphereTrace = {
         type: 'surface',
         x: xSphere,
         y: ySphere,
         z: zSphere,
-        opacity: 0.12,
-        colorscale: [[0, '#e2e8f0'], [1, '#cbd5e1']],
+        opacity: 0.10,
+        colorscale: [[0, '#cbd5e1'], [1, '#94a3b8']],
         showscale: false,
         hoverinfo: 'none'
       };
 
-      // Trace 2: Coordinate Axes
+      // 2. Cartesian Axes Lines (X, Y, Z)
       const axesTrace = {
         type: 'scatter3d',
         mode: 'lines',
-        x: [-1.2, 1.2, null, 0, 0, null, 0, 0],
-        y: [0, 0, null, -1.2, 1.2, null, 0, 0],
-        z: [0, 0, null, 0, 0, null, -1.2, 1.2],
-        line: { color: '#94a3b8', width: 2.5 },
+        x: [-1.15, 1.15, null, 0, 0, null, 0, 0],
+        y: [0, 0, null, -1.15, 1.15, null, 0, 0],
+        z: [0, 0, null, 0, 0, null, -1.15, 1.15],
+        line: { color: '#94a3b8', width: 2 },
         hoverinfo: 'none'
       };
 
-      // Trace 3: Pauli Alphabet Poles
+      // 3. Clear Non-Overlapping Pauli Poles
       const polesTrace = {
         type: 'scatter3d',
         mode: 'markers+text',
-        x: [0, 0, 1.05, -1.05, 0, 0],
-        y: [0, 0, 0, 0, 1.05, -1.05],
-        z: [1.05, -1.05, 0, 0, 0, 0],
-        text: ['|0⟩ (+Z)', '|1⟩ (-Z)', '|+⟩ (+X)', '|-⟩ (-X)', '|+i⟩ (+Y)', '|-i⟩ (-Y)'],
-        textposition: 'top center',
-        textfont: { size: 9, color: '#334155', family: 'JetBrains Mono' },
+        x: [0, 0, 1.15, -1.15, 0, 0],
+        y: [0, 0, 0, 0, 1.15, -1.15],
+        z: [1.15, -1.15, 0, 0, 0, 0],
+        text: ['|0⟩', '|1⟩', '|+⟩', '|-⟩', '|+i⟩', '|-i⟩'],
+        textposition: ['top center', 'bottom center', 'middle right', 'middle left', 'top right', 'bottom left'],
+        textfont: { size: 10, color: '#1E293B', family: 'JetBrains Mono' },
         marker: { size: 4, color: ['#6366f1', '#6366f1', '#10b981', '#10b981', '#06b6d4', '#06b6d4'] },
         hoverinfo: 'text'
       };
 
-      // Trace 4: Qubit State Vector Ray
+      // 4. Glowing State Vector Ray
+      const isSecure = (currentAttack === 'NONE');
       const vectorTrace = {
         type: 'scatter3d',
         mode: 'lines+markers',
         x: [0, vx],
         y: [0, vy],
         z: [0, vz],
-        line: { color: '#10b981', width: 6 },
-        marker: { size: [0, 7], color: '#059669' },
+        line: { color: isSecure ? '#059669' : '#E11D48', width: 6 },
+        marker: { size: [0, 8], color: isSecure ? '#10B981' : '#F43F5E' },
         hoverinfo: 'text',
         text: ['', `|ψ⟩ = [${vx.toFixed(2)}, ${vy.toFixed(2)}, ${vz.toFixed(2)}]`]
       };
 
       const layout = {
         margin: { l: 0, r: 0, b: 0, t: 0 },
+        height: 280,
         scene: {
-          xaxis: { showgrid: false, zeroline: false, showticklabels: false, title: 'X' },
-          yaxis: { showgrid: false, zeroline: false, showticklabels: false, title: 'Y' },
-          zaxis: { showgrid: false, zeroline: false, showticklabels: false, title: 'Z' },
-          camera: { eye: { x: 1.35, y: -1.35, z: 0.95 } },
+          xaxis: { showgrid: false, zeroline: false, showticklabels: false, visible: false },
+          yaxis: { showgrid: false, zeroline: false, showticklabels: false, visible: false },
+          zaxis: { showgrid: false, zeroline: false, showticklabels: false, visible: false },
+          camera: { eye: { x: 1.4, y: -1.4, z: 0.9 } },
           aspectmode: 'cube'
         },
         showlegend: false
@@ -934,28 +1453,35 @@
     }
 
     // ==========================================
-    // PLOTLY BASIS ERROR RATES CHART
+    // BASIS ERROR CHART (ALWAYS NON-EMPTY)
     // ==========================================
     function renderPlotlyBasisChart(rates) {
       const ex = (rates.E_X || 0) * 100;
       const ey = (rates.E_Y || 0) * 100;
       const ez = (rates.E_Z || 0) * 100;
 
+      // Minimum visible height so 0% values show clean baseline bars with labels
+      const dispX = Math.max(0.6, ex);
+      const dispY = Math.max(0.6, ey);
+      const dispZ = Math.max(0.6, ez);
+
       const trace = {
-        x: ['σ_x (Hadamard)', 'σ_y (Circular)', 'σ_z (Comput.)'],
-        y: [ex, ey, ez],
+        x: ['σx (Hadamard)', 'σy (Circular)', 'σz (Comp.)'],
+        y: [dispX, dispY, dispZ],
         type: 'bar',
         marker: {
           color: ['#6366f1', '#06b6d4', '#10b981'],
           line: { color: '#ffffff', width: 1.5 }
         },
         text: [`${ex.toFixed(1)}%`, `${ey.toFixed(1)}%`, `${ez.toFixed(1)}%`],
-        textposition: 'auto'
+        textposition: 'outside',
+        textfont: { size: 10, family: 'JetBrains Mono', color: '#1E293B' },
+        cliponaxis: false
       };
 
       const layout = {
-        margin: { l: 30, r: 10, t: 15, b: 25 },
-        yaxis: { range: [0, 65], ticksufix: '%', gridcolor: '#f1f5f9' },
+        margin: { l: 30, r: 10, t: 20, b: 25 },
+        yaxis: { range: [0, 65], ticksuffix: '%', gridcolor: '#f1f5f9', tickfont: { size: 9 } },
         xaxis: { tickfont: { size: 10 } },
         showlegend: false
       };
@@ -964,19 +1490,21 @@
     }
 
     // ==========================================
-    // QUBIT CHIPS RENDERER
+    // QUBIT TELEMETRY CHIPS
     // ==========================================
     function renderQubitChips(qubits) {
       const container = document.getElementById('qubits-chip-container');
+      if (!container) return;
       container.innerHTML = '';
 
-      qubits.forEach(q => {
+      qubits.slice(0, 8).forEach(q => {
         const isErr = q.error === 1;
         const chip = document.createElement('div');
-        chip.className = `p-3 rounded-xl border transition cursor-pointer hover:shadow-md ${
-          isErr ? 'border-rose-200 bg-rose-50/40' : 'border-emerald-200 bg-emerald-50/30'
+        chip.className = `p-2.5 rounded-xl border transition cursor-pointer hover:shadow-sm ${
+          isErr ? 'border-rose-200 bg-rose-50/50 hover:border-rose-300' : 'border-slate-200 bg-white hover:border-indigo-300'
         }`;
-        chip.onclick = () => { renderPlotlyBloch(q.bloch); };
+        
+        chip.onclick = () => { renderPlotlyBloch(q.bloch, q); };
 
         let stateStr = '';
         if (q.basis === 'Z') stateStr = q.eigenvalue === 1 ? '|0⟩' : '|1⟩';
@@ -985,18 +1513,19 @@
 
         chip.innerHTML = `
           <div class="flex items-center justify-between text-xs mb-1">
-            <span class="font-bold text-slate-800">Qubit #${q.index}</span>
-            <span class="px-1.5 py-0.2 rounded text-[10px] font-bold ${isErr ? 'bg-rose-100 text-rose-700' : 'bg-emerald-100 text-emerald-700'}">
-              ${isErr ? 'FAIL' : 'PASS'}
+            <span class="font-bold text-slate-800 font-mono-num">Qubit #${q.index}</span>
+            <span class="inline-flex items-center gap-1 text-[10px] font-bold font-mono-num ${isErr ? 'text-rose-700' : 'text-emerald-700'}">
+              <span class="w-1.5 h-1.5 rounded-full ${isErr ? 'bg-rose-500' : 'bg-emerald-500'}"></span>
+              ${isErr ? 'ERR' : 'PASS'}
             </span>
           </div>
-          <div class="flex items-center space-x-2 text-xs mt-1">
-            <span class="font-mono-code text-indigo-700 font-bold">${stateStr}</span>
-            <span class="text-[10px] text-slate-500 font-mono-code">Basis: &sigma;_${q.basis.toLowerCase()}</span>
+          <div class="flex items-center justify-between text-xs mt-1">
+            <span class="font-mono-num text-indigo-700 font-bold">${stateStr}</span>
+            <span class="text-[10px] text-slate-500 font-mono-num">Basis: &sigma;_${q.basis.toLowerCase()}</span>
           </div>
-          <div class="mt-2 pt-1.5 border-t border-slate-200/50 flex justify-between text-[10px] font-mono-code text-slate-500">
+          <div class="mt-1.5 pt-1.5 border-t border-slate-100 flex justify-between text-[10px] font-mono-num text-slate-400">
             <span>Bell: <strong class="text-slate-700">${q.bell_outcome}</strong></span>
-            <span>U_Pauli</span>
+            <span>U_${q.correction_applied || 'Pauli'}</span>
           </div>
         `;
         container.appendChild(chip);
@@ -1016,21 +1545,21 @@
         data.forEach(row => {
           const tr = document.createElement('tr');
           const isPass = row.decision === 'ACCEPTED';
-          tr.className = isPass ? 'bg-emerald-50/20 hover:bg-emerald-50/40' : 'hover:bg-slate-50';
+          tr.className = isPass ? 'bg-emerald-50/25 hover:bg-emerald-50/40' : 'hover:bg-slate-50';
 
           tr.innerHTML = `
-            <td class="py-3 px-4 font-bold text-slate-800">${row.attack_label}</td>
-            <td class="py-3 px-4 text-slate-500 font-mono-code text-[11px]">${row.attack_code}</td>
-            <td class="py-3 px-4 font-mono-code font-bold ${row.qber > 0.12 ? 'text-rose-600' : 'text-emerald-600'}">${(row.qber * 100).toFixed(2)}%</td>
-            <td class="py-3 px-4 font-mono-code ${row.chsh_s < 2.50 ? 'text-rose-600 font-bold' : 'text-indigo-600'}">${row.chsh_s.toFixed(3)}</td>
-            <td class="py-3 px-4 font-mono-code">${(row.basis_asymmetry * 100).toFixed(1)}%</td>
-            <td class="py-3 px-4"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${
+            <td class="py-2.5 px-3 font-bold text-slate-800">${row.attack_label}</td>
+            <td class="py-2.5 px-3 text-slate-500 font-mono-num text-[11px]">${row.attack_code}</td>
+            <td class="py-2.5 px-3 font-mono-num font-bold ${row.qber > 0.12 ? 'text-rose-600' : 'text-emerald-600'}">${(row.qber * 100).toFixed(2)}%</td>
+            <td class="py-2.5 px-3 font-mono-num ${row.chsh_s < 2.50 ? 'text-rose-600 font-bold' : 'text-indigo-600'}">${row.chsh_s.toFixed(3)}</td>
+            <td class="py-2.5 px-3 font-mono-num">${(row.basis_asymmetry * 100).toFixed(1)}%</td>
+            <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${
               row.enforcement_level === 'MONITOR' ? 'bg-emerald-100 text-emerald-800' :
               row.enforcement_level === 'RESTRICT' ? 'bg-amber-100 text-amber-800' :
               row.enforcement_level === 'QUARANTINE' ? 'bg-orange-100 text-orange-800' : 'bg-rose-100 text-rose-800'
             }">${row.enforcement_level}</span></td>
-            <td class="py-3 px-4"><span class="px-2 py-0.5 rounded text-[11px] font-bold ${isPass ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">${row.decision}</span></td>
-            <td class="py-3 px-4 font-mono-code text-slate-700">${row.confidence}%</td>
+            <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${isPass ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">${row.decision}</span></td>
+            <td class="py-2.5 px-3 font-mono-num text-slate-700">${row.confidence}%</td>
           `;
           tbody.appendChild(tr);
         });
@@ -1047,23 +1576,23 @@
         const res = await fetch('/api/benchmark');
         const data = await res.json();
 
-        // 1. Latency Chart (Plotly)
+        // 1. Latency Chart O(L)
         const latTrace = {
           x: data.key_lengths.map(l => `L=${l}`),
           y: data.latencies_ms,
           type: 'scatter',
           mode: 'lines+markers',
-          line: { color: '#6366f1', width: 3 },
-          marker: { size: 8, color: '#6366f1' },
+          line: { color: '#6366f1', width: 2.5 },
+          marker: { size: 6, color: '#6366f1' },
           name: 'Latency (ms)'
         };
         Plotly.react('plotlyLatencyChart', [latTrace], {
-          margin: { l: 45, r: 20, t: 20, b: 35 },
-          yaxis: { title: 'Milliseconds (ms)', gridcolor: '#e2e8f0' },
+          margin: { l: 45, r: 20, t: 25, b: 40 },
+          yaxis: { title: 'Milliseconds (ms)', gridcolor: '#f1f5f9' },
           xaxis: { title: 'Key Length L' }
         }, { displayModeBar: false, responsive: true });
 
-        // 2. Scaling Chart (Plotly)
+        // 2. Scaling Chart (Legend Horizontally Above Plot to Avoid Overlap)
         const logTh = data.theoretical_p_forge.map(p => Math.log10(Math.max(p, 1e-180)));
         const logHoeff = data.hoeffding_p_forge.map(p => Math.log10(Math.max(p, 1e-180)));
         const logSciPy = data.scipy_exact_p_forge.map(p => Math.log10(Math.max(p, 1e-180)));
@@ -1073,7 +1602,7 @@
           y: logTh,
           type: 'scatter',
           mode: 'lines+markers',
-          line: { color: '#10b981', dash: 'dash', width: 2.5 },
+          line: { color: '#10b981', dash: 'dash', width: 2 },
           name: 'Theoretical (2/3)^L'
         };
         const scipyTrace = {
@@ -1081,23 +1610,28 @@
           y: logSciPy,
           type: 'scatter',
           mode: 'lines+markers',
-          line: { color: '#06b6d4', width: 2.5 },
-          name: 'SciPy Exact Binomial CDF'
+          line: { color: '#06b6d4', width: 2 },
+          name: 'Exact Binomial CDF'
         };
         const hoeffTrace = {
           x: data.key_lengths.map(l => `L=${l}`),
           y: logHoeff,
           type: 'scatter',
           mode: 'lines+markers',
-          line: { color: '#f43f5e', width: 2.5 },
-          name: 'Hoeffding Upper Bound'
+          line: { color: '#f43f5e', width: 2 },
+          name: 'Hoeffding Bound'
         };
 
         Plotly.react('plotlyScalingChart', [thTrace, scipyTrace, hoeffTrace], {
-          margin: { l: 45, r: 20, t: 20, b: 35 },
-          yaxis: { title: 'log10(P_forge)', gridcolor: '#e2e8f0' },
+          margin: { l: 45, r: 20, t: 40, b: 45 },
+          yaxis: { title: 'log₁₀(P_forge)', gridcolor: '#f1f5f9' },
           xaxis: { title: 'Key Length L' },
-          legend: { orientation: 'h', y: -0.25 }
+          legend: {
+            orientation: 'h',
+            y: 1.18,
+            x: 0.05,
+            font: { size: 10 }
+          }
         }, { displayModeBar: false, responsive: true });
 
       } catch (err) {
@@ -1114,25 +1648,35 @@
         const data = await res.json();
         const contentDiv = document.getElementById('theory-content');
 
-        let html = data.markdown_content
-          .replace(/^### (.*$)/gim, '<h3 class="text-sm font-bold text-slate-900 border-b border-slate-100 pb-1 mt-4">$1</h3>')
-          .replace(/^## (.*$)/gim, '<h2 class="text-base font-bold text-indigo-700 mt-5">$1</h2>')
-          .replace(/^# (.*$)/gim, '<h1 class="text-lg font-black text-slate-900 mb-2">$1</h1>')
+        // Clean unicode rendering of mathematical expressions (no raw unrendered LaTeX)
+        let cleaned = data.markdown_content
+          .replace(/\\log_\{10\}\(P_\{?\\text\{forge\}?\}\)/g, 'log₁₀(P_forge)')
+          .replace(/\$\\log_\{10\}\(P_\{?\\text\{forge\}?\}\)\$/g, 'log₁₀(P_forge)')
+          .replace(/\$O\(k\^3\)\$/g, 'O(k³)')
+          .replace(/\$O\(L\)\$/g, 'O(L)')
+          .replace(/\$\(2\/3\)\^L\$/g, '(2/3)^L')
+          .replace(/\$P_\{?\\text\{forge\}?\} \\le 2\^\{-cL\}\$/g, 'P_forge ≤ 2^(-cL)')
+          .replace(/\$a_j\(t\+1\)=a_j\(t\)\[1\+\\eta\(E_j-\\mu_E\)\]\$/g, 'a_j(t+1) = a_j(t) · [1 + η(E_j - μ_E)]')
+          .replace(/\$\(c_j\)\$/g, 'c_j')
+          .replace(/\$U\(c_j\)\$/g, 'U(c_j)')
+          .replace(/\$|\\/g, ''); // strip remaining raw dollar signs
+
+        let html = cleaned
+          .replace(/^### (.*$)/gim, '<h3 class="text-xs font-bold text-slate-900 border-b border-slate-100 pb-1 mt-3">$1</h3>')
+          .replace(/^## (.*$)/gim, '<h2 class="text-sm font-bold text-indigo-700 mt-4">$1</h2>')
+          .replace(/^# (.*$)/gim, '<h1 class="text-base font-bold text-slate-900 mb-1">$1</h1>')
           .replace(/\*\*(.*?)\*\*/gim, '<strong>$1</strong>')
           .replace(/\*(.*?)\*/gim, '<em>$1</em>')
-          .replace(/\n\n/gim, '</p><p class="mt-2">');
+          .replace(/\n\n/gim, '</p><p class="mt-2 text-slate-600">');
 
-        contentDiv.innerHTML = `<div class="bg-white p-5 rounded-xl border border-slate-200">${html}</div>`;
-        if (window.renderMathInElement) {
-          renderMathInElement(contentDiv);
-        }
+        contentDiv.innerHTML = `<div class="bg-white p-4 rounded-xl border border-slate-100">${html}</div>`;
       } catch (err) {
         console.error("Report fetch error:", err);
       }
     }
 
     // ==========================================
-    // TAB 5: SHA-256 AUDIT LEDGER FETCHER
+    // TAB 5: AUDIT LEDGER FETCHER
     // ==========================================
     async function fetchAuditLedger() {
       try {
@@ -1141,10 +1685,11 @@
         const tbody = document.getElementById('ledger-tbody');
         tbody.innerHTML = '';
 
-        document.getElementById('badge-ledger-integrity').innerText = data.integrity_verified ? 'Integrity: Valid' : 'Integrity: Compromised';
-        document.getElementById('badge-ledger-integrity').className = data.integrity_verified ?
-          'px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-100 text-emerald-800' :
-          'px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-100 text-rose-800';
+        const badge = document.getElementById('badge-ledger-integrity');
+        badge.innerText = data.integrity_verified ? 'Integrity: Valid' : 'Integrity: Compromised';
+        badge.className = data.integrity_verified ?
+          'px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200' :
+          'px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-50 text-rose-800 border border-rose-200';
 
         data.chain.forEach(blk => {
           const tr = document.createElement('tr');
@@ -1152,17 +1697,17 @@
           tr.className = isPass ? 'hover:bg-emerald-50/20' : 'hover:bg-rose-50/20';
 
           tr.innerHTML = `
-            <td class="py-2.5 px-3 font-bold text-slate-900">#${blk.index}</td>
-            <td class="py-2.5 px-3 text-slate-800">${blk.session_id}</td>
-            <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${
+            <td class="py-2 px-3 font-bold text-slate-900">#${blk.index}</td>
+            <td class="py-2 px-3 text-slate-800">${blk.session_id}</td>
+            <td class="py-2 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${
               blk.enforcement_level === 'MONITOR' ? 'bg-emerald-100 text-emerald-800' :
               blk.enforcement_level === 'RESTRICT' ? 'bg-amber-100 text-amber-800' :
               blk.enforcement_level === 'QUARANTINE' ? 'bg-orange-100 text-orange-800' : 'bg-rose-100 text-rose-800'
             }">${blk.enforcement_level}</span></td>
-            <td class="py-2.5 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${isPass ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">${blk.decision}</span></td>
-            <td class="py-2.5 px-3 font-mono-code">${(blk.qber * 100).toFixed(2)}%</td>
-            <td class="py-2.5 px-3 font-mono-code">${blk.chsh_s.toFixed(3)}</td>
-            <td class="py-2.5 px-3 text-slate-500 truncate max-w-xs" title="${blk.hash}">${blk.hash.substring(0, 16)}...</td>
+            <td class="py-2 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${isPass ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">${blk.decision}</span></td>
+            <td class="py-2 px-3 font-mono-num">${(blk.qber * 100).toFixed(2)}%</td>
+            <td class="py-2 px-3 font-mono-num">${blk.chsh_s.toFixed(3)}</td>
+            <td class="py-2 px-3 text-slate-500 truncate max-w-xs cursor-pointer hover:text-indigo-600" onclick="navigator.clipboard.writeText('${blk.hash}'); showToast('Hash copied to clipboard', 'success');" title="Click to copy full hash: ${blk.hash}">${blk.hash.substring(0, 16)}...</td>
           `;
           tbody.appendChild(tr);
         });
@@ -1172,10 +1717,10 @@
     }
 
     async function resetAuditLedger() {
-      if (!confirm("Are you sure you want to reset the microsecond cache and audit ledger?")) return;
+      if (!confirm("Reset the microsecond session cache and SHA-256 audit ledger?")) return;
       await fetch('/api/audit-ledger/reset', { method: 'POST' });
       fetchAuditLedger();
-      alert("Microsecond Cache and SHA-256 Cryptographic Audit Ledger reset.");
+      showToast("Cache and audit ledger reset to genesis state", "success");
     }
 
     async function downloadLedgerJSON() {
@@ -1187,10 +1732,11 @@
       a.href = url;
       a.download = `qds_cryptographic_ledger_${Date.now()}.json`;
       a.click();
+      showToast("Ledger JSON exported successfully", "success");
     }
 
     // ==========================================
-    // QISKIT MODAL VIEWER
+    // CIRCUIT VIEWER MODAL
     // ==========================================
     async function openCircuitModal() {
       const modal = document.getElementById('circuitModal');
@@ -1199,14 +1745,195 @@
         const res = await fetch('/api/qiskit-circuit?basis=X&eigenvalue=1');
         const data = await res.json();
         document.getElementById('circuitAsciiText').innerText = data.circuit_ascii;
-        document.getElementById('circuitGateCounts').innerText = `Circuit Stats: ${data.qubits} Qubits, ${data.clbits} Classical Bits, Gates: ${JSON.stringify(data.gate_counts)}`;
+        document.getElementById('circuitGateCounts').innerText = `Stats: ${data.qubits} Qubits, ${data.clbits} Classical Bits &bull; Gates: ${JSON.stringify(data.gate_counts)}`;
       } catch (err) {
-        document.getElementById('circuitAsciiText').innerText = "Error loading circuit: " + err.message;
+        document.getElementById('circuitAsciiText').innerText = "Circuit load error: " + err.message;
       }
     }
 
     function closeCircuitModal() {
       document.getElementById('circuitModal').classList.add('hidden');
+    }
+
+    // ==========================================
+    // NOISE LAB HANDLERS
+    // ==========================================
+    let currentNoiseBasis = 'X';
+
+    function setNoiseBasis(b) {
+      currentNoiseBasis = b;
+      ['X', 'Y', 'Z'].forEach(k => {
+        const btn = document.getElementById(`btn-nb-${k}`);
+        if (btn) {
+          if (k === b) {
+            btn.className = "nb-btn p-2 rounded-xl border border-indigo-300 bg-indigo-50 text-indigo-800 font-bold text-xs";
+          } else {
+            btn.className = "nb-btn p-2 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 font-bold text-xs";
+          }
+        }
+      });
+      runNoiseSimulation();
+    }
+
+    async function runNoiseSimulation() {
+      const noiseType = document.getElementById('noise-channel-select').value;
+      const errorRate = parseFloat(document.getElementById('input-noise-rate').value);
+      const btn = document.getElementById('btn-run-noise');
+      if (btn) btn.innerText = "Simulating Noise...";
+
+      try {
+        const res = await fetch('/api/circuit/noise-simulation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            basis: currentNoiseBasis,
+            eigenvalue: 1,
+            noise_type: noiseType,
+            error_rate: errorRate,
+            shots: 1024
+          })
+        });
+
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+
+        document.getElementById('res-noisy-fid').innerText = data.noisy_fidelity.toFixed(4);
+        document.getElementById('res-purity').innerText = data.purity.toFixed(4);
+        const bx = data.statevector_bloch.x;
+        const by = data.statevector_bloch.y;
+        const bz = data.statevector_bloch.z;
+        const br = Math.sqrt(bx*bx + by*by + bz*bz);
+        document.getElementById('res-bloch-r').innerText = br.toFixed(4);
+        document.getElementById('res-channel-desc').innerText = data.channel_description;
+        document.getElementById('res-counts-json').innerText = JSON.stringify(data.measurement_counts, null, 2);
+      } catch (err) {
+        console.error("Noise sim error:", err);
+      } finally {
+        if (btn) btn.innerText = "Simulate Channel Noise";
+      }
+    }
+
+    // ==========================================
+    // MULTI-PARTY AUTHENTICATION & SESSIONS
+    // ==========================================
+    let currentAuthToken = null;
+    let currentAuthUser = null;
+
+    async function loadEntities() {
+      try {
+        const res = await fetch('/api/auth/entities');
+        const entities = await res.json();
+        const container = document.getElementById('entities-container');
+        if (!container) return;
+        container.innerHTML = '';
+
+        entities.forEach(ent => {
+          const card = document.createElement('div');
+          const isCurrent = currentAuthUser && currentAuthUser.username === ent.username;
+          card.className = `p-3 rounded-xl border transition ${isCurrent ? 'border-emerald-300 bg-emerald-50/40 shadow-xs' : 'border-slate-200 bg-white hover:border-slate-300'}`;
+          
+          let pass = ent.username === 'alice' ? 'alice_signer_2026' :
+                     ent.username === 'bob' ? 'bob_verifier_2026' :
+                     ent.username === 'charlie' ? 'charlie_verifier_2026' : 'auditor_pass_2026';
+
+          card.innerHTML = `
+            <div class="flex items-center justify-between text-xs mb-1">
+              <span class="font-bold text-slate-800">${ent.username.toUpperCase()}</span>
+              <span class="px-2 py-0.5 rounded text-[10px] font-bold ${ent.role === 'signer' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' : 'bg-emerald-50 text-emerald-700 border border-emerald-200'}">${ent.role}</span>
+            </div>
+            <p class="text-[11px] text-slate-500 mb-1.5 truncate" title="${ent.description}">${ent.description}</p>
+            <div class="text-[10px] font-mono-num text-slate-400 truncate mb-2">${ent.public_key_fingerprint}</div>
+            <button onclick="loginEntity('${ent.username}', '${pass}')" class="w-full py-1.5 rounded-lg text-xs font-semibold ${isCurrent ? 'bg-emerald-600 text-white' : 'bg-slate-100 hover:bg-slate-200 text-slate-700'} transition">
+              ${isCurrent ? 'Authenticated' : 'Login as ' + ent.username}
+            </button>
+          `;
+          container.appendChild(card);
+        });
+      } catch (err) {
+        console.error("Load entities error:", err);
+      }
+    }
+
+    async function loginEntity(username, password) {
+      try {
+        const res = await fetch('/api/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ username, password })
+        });
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        currentAuthToken = data.access_token;
+        currentAuthUser = data.user;
+        const badge = document.getElementById('badge-auth-status');
+        if (badge) {
+          badge.className = "px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200";
+          badge.innerText = `${data.user.entity_name} (${data.user.role})`;
+        }
+        showToast(`Authenticated as ${data.user.entity_name}`, "success");
+        loadEntities();
+      } catch (err) {
+        showToast("Authentication failed: " + err.message, "error");
+      }
+    }
+
+    async function runMultiPartyVerification() {
+      if (!currentAuthToken) {
+        await loginEntity('alice', 'alice_signer_2026');
+      }
+
+      const msg = document.getElementById('mp-input-msg').value;
+      const atk = document.getElementById('mp-attack-select').value;
+      const btn = document.getElementById('btn-run-mp');
+      btn.innerText = "Executing Multi-Party Teleportation...";
+      btn.disabled = true;
+
+      try {
+        const res = await fetch('/api/auth/verify-signature', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${currentAuthToken}`
+          },
+          body: JSON.stringify({
+            message: msg,
+            L: 64,
+            channel_noise: 0.01,
+            simulate_attack: atk
+          })
+        });
+
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+
+        const box = document.getElementById('mp-results-box');
+        box.classList.remove('hidden');
+
+        document.getElementById('mp-res-bob-badge').innerText = data.bob_decision;
+        document.getElementById('mp-res-bob-badge').className = data.bob_decision === 'ACCEPTED' ?
+          'px-2 py-0.5 rounded text-[10px] bg-emerald-100 text-emerald-800 font-bold' :
+          'px-2 py-0.5 rounded text-[10px] bg-rose-100 text-rose-800 font-bold';
+        document.getElementById('mp-res-bob-qber').innerText = `${(data.bob_qber * 100).toFixed(2)}%`;
+
+        document.getElementById('mp-res-charlie-badge').innerText = data.charlie_decision;
+        document.getElementById('mp-res-charlie-badge').className = data.charlie_decision === 'ACCEPTED' ?
+          'px-2 py-0.5 rounded text-[10px] bg-emerald-100 text-emerald-800 font-bold' :
+          'px-2 py-0.5 rounded text-[10px] bg-rose-100 text-rose-800 font-bold';
+        document.getElementById('mp-res-charlie-qber').innerText = `${(data.charlie_qber * 100).toFixed(2)}%`;
+
+        document.getElementById('mp-res-consensus-badge').innerText = data.consensus_decision;
+        document.getElementById('mp-res-consensus-badge').className = data.consensus_decision === 'ACCEPTED' ?
+          'px-2 py-0.5 rounded text-[10px] bg-emerald-100 text-emerald-800 font-bold' :
+          'px-2 py-0.5 rounded text-[10px] bg-rose-100 text-rose-800 font-bold';
+        document.getElementById('mp-res-risk').innerText = data.repudiation_risk_score.toFixed(4);
+
+        showToast("Multi-party signature consensus evaluated", "success");
+      } catch (err) {
+        showToast("Verification error: " + err.message, "error");
+      } finally {
+        btn.innerText = "Execute Multi-Party Signature (Alice → Bob & Charlie)";
+        btn.disabled = false;
+      }
     }
 
     // Initialize application on load

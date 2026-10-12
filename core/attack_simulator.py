@@ -38,6 +38,7 @@ class AdversarialAttackSimulator:
         self.state_cache = MicrosecondStateCache()
         self.audit_ledger = CryptographicAuditLedger()
         self.detector = StatisticalThreatDetector()
+        self._sid_counter = 0
 
     def run_pipeline(self,
                      message: str = "Quantum Authenticated Payload",
@@ -60,7 +61,9 @@ class AdversarialAttackSimulator:
         start_time = time.perf_counter()
 
         if sid is None:
-            sid = f"SID-{int(time.time() * 1000)}-{np.random.randint(1000, 9999)}"
+            self._sid_counter += 1
+            now_ns = time.time_ns()
+            sid = f"SID-{now_ns}-{self._sid_counter:06d}"
 
         # If attack is REPLAY, simulate a prior legitimate transaction with this SID first
         if attack_type == "REPLAY":
@@ -230,7 +233,8 @@ class AdversarialAttackSimulator:
             declared_basis_key=declared_basis_key,
             declared_eigenvalue_key=declared_eig_key,
             canary_indices=canary_indices,
-            canary_states=canary_states
+            canary_states=canary_states,
+            channel_noise=channel_noise
         )
 
         # Cross-Verifier Consensus (Bob & Charlie non-repudiation)

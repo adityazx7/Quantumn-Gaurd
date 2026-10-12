@@ -109,8 +109,9 @@ class GroverWeakDisturbanceAmplifier:
         amplified_energy = float(np.sum((amplitudes - (1.0 / np.sqrt(L))) ** 2))
         amplified_score = float(min(1.0, original_qber * (1.0 + amplified_energy * 3.5)))
 
-        # Weak attack is flagged if raw QBER was slightly elevated and amplified score crosses threshold
-        weak_attack_detected = (original_qber > baseline_noise * 1.25) and (amplified_score >= 0.10)
+        # Weak attack is flagged if raw QBER exceeds statistical fluctuation (2 sigma) and amplified score crosses T_v (12%)
+        std_err = float(np.sqrt(max(baseline_noise * (1.0 - baseline_noise), 1e-4) / L))
+        weak_attack_detected = (original_qber >= baseline_noise + 2.0 * std_err) and (amplified_score >= 0.12)
 
         return {
             "original_qber": round(original_qber, 4),
@@ -183,7 +184,7 @@ class StatisticalThreatDetector:
         self.p_forge = p_forge      # Minimum theoretical adversary error rate (33.3% across 3 MUBs)
         self.T_v = 0.12             # Verification acceptance threshold
         self.T_f = 0.15             # Forgery alert threshold
-        self.delta_asym = 0.15      # Basis asymmetry threshold for Intercept-Resend detection
+        self.delta_asym = 0.20      # Basis asymmetry threshold for Intercept-Resend detection (theory: 50%)
         self.T_probe = 0.20         # Canary error threshold for probing detection
         self.epsilon_purity = 0.12  # Density matrix purity disturbance threshold
 
@@ -205,6 +206,10 @@ class StatisticalThreatDetector:
         scipy_p_forge_exact = float(stats.binom.cdf(k_thresh, L, self.p_forge))
         scipy_p_reject_exact = float(1.0 - stats.binom.cdf(k_thresh, L, self.p_err))
 
+        # Exact Information-Theoretic Security bits: -log2(P_forge_noiseless) = L * log2(3/2) ≈ 0.585 * L
+        exact_its_bits = round(-math.log2(max(p_noiseless_bound, 1e-300)), 2)
+        hoeffding_its_bits = round(-math.log2(max(p_forge_bound, 1e-300)), 2)
+
         return {
             "L": L,
             "hoeffding_p_forge": p_forge_bound,
@@ -212,7 +217,8 @@ class StatisticalThreatDetector:
             "scipy_exact_p_forge": scipy_p_forge_exact,
             "scipy_exact_p_false_reject": scipy_p_reject_exact,
             "noiseless_theoretical_p_forge": p_noiseless_bound,
-            "bits_of_security": round(-math.log2(max(p_forge_bound, 1e-300)), 2)
+            "bits_of_security": exact_its_bits,
+            "hoeffding_bits_of_security": hoeffding_its_bits
         }
 
     def measure_and_verify(self,
@@ -220,7 +226,8 @@ class StatisticalThreatDetector:
                            declared_basis_key: List[str],
                            declared_eigenvalue_key: List[int],
                            canary_indices: Optional[List[int]] = None,
-                           canary_states: Optional[List[np.ndarray]] = None) -> Dict[str, Any]:
+                           canary_states: Optional[List[np.ndarray]] = None,
+                           channel_noise: float = 0.02) -> Dict[str, Any]:
         """
         Phase 4: Executes rank-1 projective measurements Pi_pass = |psi><psi|
         and records empirical Quantum Bit Error Rate (QBER) and basis-specific error rates.
@@ -283,10 +290,11 @@ class StatisticalThreatDetector:
 
         avg_purity = float(np.mean(purities)) if purities else 1.0
 
-        # Run Grover-Inspired Weak Disturbance Amplification
+        # Run Grover-Inspired Weak Disturbance Amplification with expected channel background
+        bg_baseline = max(self.p_err, channel_noise / 2.0)
         grover_telemetry = GroverWeakDisturbanceAmplifier.amplify_disturbance(
             error_vector=errors,
-            baseline_noise=self.p_err
+            baseline_noise=bg_baseline
         )
 
         return {
@@ -339,24 +347,25 @@ class StatisticalThreatDetector:
             enforcement_level = "ISOLATE"
             confidence = 100.0
 
-        # Rule 2: Channel-level attacks (Entanglement Breaking / S < S_min)
-        elif s_val < chsh_data["security_threshold"]:
-            if s_val <= chsh_data["classical_limit"] and (0.35 <= qber <= 0.65) and delta_asym < 0.25:
-                threat_detected = True
-                threat_type = "IMPERSONATION_ATTACK"
-                threat_description = f"Impersonation attack detected! Adversary lacks Bell entanglement. Reduced density matrix is maximally mixed (rho = I/2). S={s_val:.2f} <= 2.0, QBER={qber:.2%} ~ 50% across all Pauli bases."
-                trigger_rule = "QBER ~ 0.50 across all Pauli bases AND CHSH S <= 2.0"
-                enforcement_level = "ISOLATE"
-                confidence = 99.99
-            else:
-                threat_detected = True
-                threat_type = "QUANTUM_CHANNEL_MANIPULATION"
-                threat_description = f"Channel manipulation (Intercept-Resend) detected! Entanglement breaking induces conjugate basis error asymmetry (Delta_E={delta_asym:.3f} >= {self.delta_asym}) and CHSH collapse (S={s_val:.2f} < 2.50)."
-                trigger_rule = "max |E_alpha - E_beta| >= delta_asym OR CHSH S < S_min"
-                enforcement_level = "ISOLATE"
-                confidence = 99.95
+        # Rule 2: Impersonation Attack (Eve lacks Bell entanglement, maximally mixed state rho = I/2)
+        elif s_val <= chsh_data["classical_limit"] and (0.35 <= qber <= 0.65) and delta_asym < 0.25:
+            threat_detected = True
+            threat_type = "IMPERSONATION_ATTACK"
+            threat_description = f"Impersonation attack detected! Adversary lacks Bell entanglement. Reduced density matrix is maximally mixed (rho = I/2). S={s_val:.2f} <= 2.0, QBER={qber:.2%} ~ 50% across all Pauli bases."
+            trigger_rule = "QBER ~ 0.50 across all Pauli bases AND CHSH S <= 2.0"
+            enforcement_level = "ISOLATE"
+            confidence = 99.99
 
-        # Rule 3: Multi-Receiver Repudiation Check (Document 4)
+        # Rule 3: Quantum Channel Manipulation (Intercept-Resend in Conjugate Basis)
+        elif delta_asym >= self.delta_asym and s_val < chsh_data["security_threshold"]:
+            threat_detected = True
+            threat_type = "QUANTUM_CHANNEL_MANIPULATION"
+            threat_description = f"Channel manipulation (Intercept-Resend) detected! Entanglement breaking induces conjugate basis error asymmetry (Delta_E={delta_asym:.3f} >= {self.delta_asym}) and CHSH collapse (S={s_val:.2f} < 2.50)."
+            trigger_rule = "max |E_alpha - E_beta| >= delta_asym AND CHSH S < S_min"
+            enforcement_level = "ISOLATE"
+            confidence = 99.95
+
+        # Rule 4: Multi-Receiver Repudiation Check (Document 4)
         elif consensus_data and consensus_data.get("repudiation_detected", False):
             threat_detected = True
             threat_type = "REPUDIATION_ATTACK"
@@ -365,17 +374,17 @@ class StatisticalThreatDetector:
             enforcement_level = "ISOLATE"
             confidence = 99.99
 
-        # Rule 4: Unauthorized Verification Probing (Canary Qubits & State Purity)
-        elif has_canary_anomaly or canary_err >= self.T_probe or purity < (1.0 - self.epsilon_purity):
+        # Rule 5: Unauthorized Verification Probing (Canary Qubits & State Purity)
+        elif has_canary_anomaly or (canary_err >= self.T_probe and purity < 0.75) or purity < 0.70:
             threat_detected = True
             threat_type = "UNAUTHORIZED_VERIFICATION_PROBE"
-            threat_description = f"Unauthorized probing detected! Measurement-disturbance caused state purity drop ({purity:.3f} < {1.0 - self.epsilon_purity:.2f}) and canary error ({canary_err:.3f} >= {self.T_probe})."
-            trigger_rule = "Tr(rho^2) <= 1 - eps_p OR E_canary >= T_probe"
+            threat_description = f"Unauthorized probing detected! Measurement-disturbance caused state purity drop ({purity:.3f} < 0.75) and canary error ({canary_err:.3f} >= {self.T_probe})."
+            trigger_rule = "Tr(rho^2) <= 0.70 OR (E_canary >= T_probe AND Purity Disturbed)"
             enforcement_level = "QUARANTINE"
             confidence = 99.98
 
-        # Rule 5: Digital Signature Forgery (Message tampering & key guessing)
-        elif qber >= self.T_f:
+        # Rule 6: Digital Signature Forgery (Message tampering & key guessing)
+        elif qber >= self.T_f and (delta_asym >= self.delta_asym or qber >= 0.30):
             threat_detected = True
             threat_type = "DIGITAL_SIGNATURE_FORGERY"
             threat_description = f"Digital signature forgery detected! Message tampered or invalid quantum public key declared. QBER={qber:.2%} >= T_f ({self.T_f:.2%}) matching expected 33.3% guessing error."
@@ -383,7 +392,7 @@ class StatisticalThreatDetector:
             enforcement_level = "ISOLATE" if qber >= 0.30 else "QUARANTINE"
             confidence = 99.99
 
-        # Rule 6: Grover-Amplified Weak Intercept Attack (Document 4)
+        # Rule 7: Grover-Amplified Weak Intercept Attack (Document 4)
         elif qber_data["grover_amplification"].get("weak_attack_detected", False):
             threat_detected = True
             threat_type = "WEAK_INTERCEPT_TAMPERING"
@@ -392,16 +401,25 @@ class StatisticalThreatDetector:
             enforcement_level = "QUARANTINE"
             confidence = 99.50
 
-        # Rule 7: Channel Degradation / Restrict Level (Document 4)
-        elif self.T_v < qber < self.T_f:
+        # Rule 8: Severe Optical Channel Degradation (QUARANTINE)
+        elif qber >= self.T_f:
+            threat_detected = True
+            threat_type = "ELEVATED_CHANNEL_NOISE"
+            threat_description = f"Signature quarantined: Elevated channel noise (QBER={qber:.2%} >= T_f {self.T_f:.2%}) exceeds secure operation threshold."
+            trigger_rule = "QBER >= T_f (Severe Noise Quarantine)"
+            enforcement_level = "QUARANTINE"
+            confidence = 96.0
+
+        # Rule 9: Channel Degradation / Restrict Level (Document 4)
+        elif (self.T_v < qber < self.T_f) or s_val < chsh_data["security_threshold"]:
             threat_detected = False
             threat_type = "ELEVATED_CHANNEL_NOISE"
-            threat_description = f"Signature accepted with RESTRICTION: Elevated channel noise (QBER={qber:.2%}). Requesting partial decoy state retransmission."
-            trigger_rule = "T_v < QBER < T_f (Optical Noise Mitigation)"
+            threat_description = f"Signature accepted with RESTRICTION: Elevated channel noise (QBER={qber:.2%}, S={s_val:.2f}). Requesting partial decoy state retransmission."
+            trigger_rule = "T_v < QBER < T_f OR S < S_min (Optical Noise Mitigation)"
             enforcement_level = "RESTRICT"
             confidence = 98.0
 
-        # Rule 8: Legitimate Signature Acceptance (MONITOR)
+        # Rule 10: Legitimate Signature Acceptance (MONITOR)
         elif qber <= self.T_v and s_val >= chsh_data["security_threshold"]:
             threat_detected = False
             threat_type = "NONE"
