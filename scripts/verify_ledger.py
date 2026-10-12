@@ -12,6 +12,7 @@ import os
 # Add project root to sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
+from db.base import init_db
 from db.repositories import get_blocks, calculate_block_hash
 
 
@@ -20,6 +21,7 @@ def verify_chain() -> bool:
     print("=== QUANTUMGUARD QDS: CRYPTOGRAPHIC AUDIT LEDGER INTEGRITY CHECK ===")
     print("===================================================================")
 
+    init_db()
     blocks = get_blocks()
     total = len(blocks)
     print(f"Total blocks in chain: {total}")

@@ -15,6 +15,10 @@ import time
 import hashlib
 from sqlalchemy import text, inspect
 
+# Set fallback test database for local unit testing if DATABASE_URL not set
+if "DATABASE_URL" not in os.environ:
+    os.environ["DATABASE_URL"] = "sqlite:///./test_qds.db"
+
 # Add project root to sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
