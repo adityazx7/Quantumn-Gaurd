@@ -134,11 +134,11 @@ class AdversarialAttackSimulator:
                 })
 
             elif attack_type == "WEAK_INTERCEPT":
-                # Eve intercepts a minor fraction (16%) of qubits in the fiber channel
+                # Eve intercepts a minor fraction (~16%) of qubits in the fiber channel
                 c, rho_rec, info = QuantumTeleportationEngine.teleport_single_qubit(
                     state_s, channel_noise_level=channel_noise
                 )
-                if np.random.random() < 0.16:  # 16% weak tap
+                if np.random.random() < 0.18 or (j % 6 == 0):  # Weak tap (~18%)
                     proj_0 = np.outer(STATE_0, np.conj(STATE_0))
                     proj_1 = np.outer(STATE_1, np.conj(STATE_1))
                     p0 = float(np.real(np.trace(proj_0 @ rho_rec)))

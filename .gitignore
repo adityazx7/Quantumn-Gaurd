@@ -35,3 +35,13 @@ wheels/
 # Testing & logs
 .pytest_cache/
 *.log
+
+# Environment & local secrets
+.env
+*.db
+*.sqlite3
+postgres_data/
+redis_data/
+backups/
+
+

@@ -1,0 +1,88 @@
+version: '3.8'
+
+services:
+  # Relational database for persistent audit ledger and authentication
+  postgres:
+    image: postgres:15-alpine
+    container_name: quantumguard-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-quantumguard}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-quantumguard}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - quantum-network
+
+  # Sub-microsecond distributed key cache for instant replay attack invalidation
+  redis:
+    image: redis:7-alpine
+    container_name: quantumguard-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redisdata:/data
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - quantum-network
+
+  # Core FastAPI quantum simulation, threat detection, and API engine
+  backend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.backend
+    container_name: quantumguard-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-quantumguard}
+      REDIS_URL: redis://redis:6379/0
+      APP_ENV: production
+      SECRET_KEY: ${SECRET_KEY:-quantumguard-super-secret-key-sih-2026-production}
+    ports:
+      - "8000:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - quantum-network
+
+  # High-performance Nginx web server delivering the Blue/Red Team Command Center
+  frontend:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.frontend
+    container_name: quantumguard-frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+    depends_on:
+      - backend
+    networks:
+      - quantum-network
+
+volumes:
+  pgdata:
+    name: quantumguard-pgdata
+  redisdata:
+    name: quantumguard-redisdata
+
+networks:
+  quantum-network:
+    name: quantumguard-net
+    driver: bridge
