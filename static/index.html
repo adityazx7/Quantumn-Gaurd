@@ -1106,10 +1106,11 @@
     async function runSimulation() {
       const btn = document.getElementById('btn-run');
       const btnText = document.getElementById('btn-run-text');
-      btn.disabled = true;
+      if (btn) btn.disabled = true;
       if (btnText) btnText.innerText = "Simulating Protocol...";
 
-      const msg = document.getElementById('input-msg').value || "Quantum Authenticated Transaction Payload";
+      const msgInput = document.getElementById('input-msg');
+      const msg = (msgInput && msgInput.value) ? msgInput.value : "Quantum Authenticated Transaction Payload";
       const useWs = document.getElementById('toggle-ws-telemetry') && document.getElementById('toggle-ws-telemetry').checked;
 
       const payload = {
@@ -1127,6 +1128,14 @@
 
         try {
           const ws = new WebSocket(wsUrl);
+          let completed = false;
+
+          const timeoutId = setTimeout(() => {
+            if (!completed) {
+              try { ws.close(); } catch (_) {}
+              runHttpSimulation(payload, btn, btnText);
+            }
+          }, 4000);
 
           ws.onopen = () => {
             ws.send(JSON.stringify(payload));
@@ -1138,20 +1147,29 @@
               if (data.event === 'PHASE_1_KEYGEN') {
                 setStep(1, "Phase 1: Pauli Preparation & Canaries");
               } else if (data.event === 'PHASE_2_ENTANGLEMENT') {
-                setStep(2, `Phase 2: Bell Entanglement (CHSH S=${data.data.chsh_s_value})`);
+                const s = data.data && data.data.chsh_s_value !== undefined ? data.data.chsh_s_value : 2.82;
+                setStep(2, `Phase 2: Bell Entanglement (CHSH S=${Number(s).toFixed(2)})`);
               } else if (data.event === 'PHASE_3_TELEPORTATION') {
                 setStep(3, "Phase 3: 3-Qubit Teleportation Channel");
               } else if (data.event === 'PHASE_4_VERIFICATION') {
-                setStep(4, `Phase 4: Non-AI Measurement (QBER=${(data.data.qber * 100).toFixed(1)}%)`);
+                const qb = data.data && data.data.qber !== undefined ? data.data.qber : 0.0;
+                setStep(4, `Phase 4: Non-AI Measurement (QBER=${(Number(qb) * 100).toFixed(1)}%)`);
               } else if (data.event === 'PHASE_5_CONSENSUS_LEDGER') {
                 setStep(5, "Phase 5: Consensus & SHA-256 Ledger Append");
               } else if (data.event === 'SIMULATION_COMPLETE') {
+                completed = true;
+                clearTimeout(timeoutId);
                 resetSteps();
                 lastSimResult = data.result;
-                renderSimulationResults(data.result);
-                btn.disabled = false;
-                if (btnText) btnText.innerText = "Execute Verification Pipeline";
-                ws.close();
+                try {
+                  renderSimulationResults(data.result);
+                } catch (renderErr) {
+                  console.error("Render error:", renderErr);
+                } finally {
+                  if (btn) btn.disabled = false;
+                  if (btnText) btnText.innerText = "Execute Verification Pipeline";
+                  try { ws.close(); } catch (_) {}
+                }
               }
             } catch (err) {
               console.error("WebSocket payload error:", err);
@@ -1159,7 +1177,17 @@
           };
 
           ws.onerror = () => {
-            runHttpSimulation(payload, btn, btnText);
+            if (!completed) {
+              clearTimeout(timeoutId);
+              runHttpSimulation(payload, btn, btnText);
+            }
+          };
+
+          ws.onclose = () => {
+            if (!completed) {
+              clearTimeout(timeoutId);
+              runHttpSimulation(payload, btn, btnText);
+            }
           };
 
           return;
@@ -1211,26 +1239,32 @@
 
     // Render telemetry results
     function renderSimulationResults(data) {
-      const qber = data.qber_analysis.qber;
-      const sVal = data.chsh.S_value;
-      const decision = data.decision.decision;
-      const enforcement = data.decision.enforcement_level;
-      const threatType = data.decision.threat_type;
+      if (!data) return;
+      const qber = (data.qber_analysis && data.qber_analysis.qber !== undefined) ? data.qber_analysis.qber : 0.0;
+      const sVal = (data.chsh && data.chsh.S_value !== undefined) ? data.chsh.S_value : 2.82;
+      const decision = (data.decision && data.decision.decision) ? data.decision.decision : "ACCEPTED";
+      const enforcement = (data.decision && data.decision.enforcement_level) ? data.decision.enforcement_level : "MONITOR";
+      const threatType = (data.decision && data.decision.threat_type) ? data.decision.threat_type : "NORMAL_OPERATION";
+      const conf = (data.decision && (data.decision.confidence_percentage ?? data.decision.confidence)) ?? 100.0;
 
       // Animate Metric Values
       animateValue('metric-qber', 0, qber * 100, 300, v => `${v.toFixed(2)}%`);
       animateValue('metric-chsh', 2.0, sVal, 300, v => v.toFixed(3));
-      animateValue('metric-ecs', 0.5, data.consensus.ECS_score, 300, v => v.toFixed(3));
-      animateValue('metric-tref', 0, data.qkd_refresh.t_refresh_sec, 300, v => `${v.toFixed(2)}s`);
+      animateValue('metric-ecs', 0.5, (data.consensus && data.consensus.ECS_score) ? data.consensus.ECS_score : 1.0, 300, v => v.toFixed(3));
+      animateValue('metric-tref', 0, (data.qkd_refresh && data.qkd_refresh.t_refresh_sec) ? data.qkd_refresh.t_refresh_sec : 0.0, 300, v => `${v.toFixed(2)}s`);
 
-      document.getElementById('badge-enforcement').innerText = enforcement;
-      document.getElementById('metric-threat-type').innerText = threatType.replace(/_/g, ' ');
-      document.getElementById('badge-confidence').innerText = `${data.decision.confidence.toFixed(1)}%`;
-      document.getElementById('lbl-total-qubits').innerText = data.key_length_L;
+      const enfBadge = document.getElementById('badge-enforcement');
+      if (enfBadge) enfBadge.innerText = enforcement;
+      const ttBadge = document.getElementById('metric-threat-type');
+      if (ttBadge) ttBadge.innerText = threatType.replace(/_/g, ' ');
+      const confBadge = document.getElementById('badge-confidence');
+      if (confBadge) confBadge.innerText = `${Number(conf).toFixed(1)}%`;
+      const totQubits = document.getElementById('lbl-total-qubits');
+      if (totQubits) totQubits.innerText = data.key_length_L || currentL;
       
       // Ledger height badge with pulse
       const lblHeight = document.getElementById('lbl-block-height');
-      lblHeight.innerText = `#${data.ledger_blocks_count}`;
+      if (lblHeight) lblHeight.innerText = `#${data.ledger_blocks_count || 1}`;
       const pill = document.getElementById('header-ledger-pill');
       if (pill) {
         pill.classList.add('bg-indigo-50');
@@ -1303,41 +1337,51 @@
       const bannerSid = document.getElementById('banner-sid');
       const bannerBits = document.getElementById('banner-bits');
 
-      bannerSid.innerText = data.session_id;
-      bannerRule.innerText = data.decision.trigger_rule;
-      bannerDesc.innerText = data.decision.threat_description;
-      bannerBits.innerText = `> ${data.hoeffding_bounds.bits_of_security} Bits`;
+      if (bannerSid) bannerSid.innerText = data.session_id || "SID-0000";
+      if (bannerRule) bannerRule.innerText = data.decision?.trigger_rule || "Rule 1";
+      if (bannerDesc) bannerDesc.innerText = data.decision?.threat_description || "Normal operation";
+      if (bannerBits) bannerBits.innerText = `> ${data.hoeffding_bounds?.bits_of_security ?? 37.4} Bits`;
 
       if (decision === "ACCEPTED") {
-        banner.className = "q-card p-4.5 border-l-4 border-l-emerald-500 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4";
-        bannerIconBg.className = "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-emerald-50 text-emerald-600 border border-emerald-200";
-        bannerIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 13l4 4L19 7"></path>`;
-        bannerTitle.innerText = "Deterministic Signature Acceptance";
-        bannerBadge.className = "px-2 py-0.5 text-[10px] font-bold rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase";
-        bannerBadge.innerText = "VALID";
+        if (banner) banner.className = "q-card p-4.5 border-l-4 border-l-emerald-500 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4";
+        if (bannerIconBg) bannerIconBg.className = "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-emerald-50 text-emerald-600 border border-emerald-200";
+        if (bannerIcon) bannerIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M5 13l4 4L19 7"></path>`;
+        if (bannerTitle) bannerTitle.innerText = "Deterministic Signature Acceptance";
+        if (bannerBadge) {
+          bannerBadge.className = "px-2 py-0.5 text-[10px] font-bold rounded-md bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase";
+          bannerBadge.innerText = "VALID";
+        }
       } else {
-        banner.className = "q-card p-4.5 border-l-4 border-l-rose-500 animate-threat flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4";
-        bannerIconBg.className = "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-rose-50 text-rose-600 border border-rose-200";
-        bannerIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>`;
-        bannerTitle.innerText = `Threat Detected: ${threatType.replace(/_/g, ' ')}`;
-        bannerBadge.className = "px-2 py-0.5 text-[10px] font-bold rounded-md bg-rose-50 text-rose-700 border border-rose-200 uppercase";
-        bannerBadge.innerText = "REJECTED";
+        if (banner) banner.className = "q-card p-4.5 border-l-4 border-l-rose-500 animate-threat flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4";
+        if (bannerIconBg) bannerIconBg.className = "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-rose-50 text-rose-600 border border-rose-200";
+        if (bannerIcon) bannerIcon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>`;
+        if (bannerTitle) bannerTitle.innerText = `Threat Detected: ${threatType.replace(/_/g, ' ')}`;
+        if (bannerBadge) {
+          bannerBadge.className = "px-2 py-0.5 text-[10px] font-bold rounded-md bg-rose-50 text-rose-700 border border-rose-200 uppercase";
+          bannerBadge.innerText = "REJECTED";
+        }
       }
 
       // Grover Card Telemetry
-      const grover = data.qber_analysis.grover_amplification;
-      document.getElementById('lbl-grover-raw').innerText = `${(grover.original_qber * 100).toFixed(2)}%`;
-      document.getElementById('lbl-grover-amp').innerText = `${(grover.amplified_score * 100).toFixed(2)}%`;
-      document.getElementById('lbl-grover-gain').innerText = `${grover.amplification_gain}x`;
-      document.getElementById('grover-bar').style.width = `${Math.min(100, (grover.amplified_score / 0.30) * 100)}%`;
+      const grover = data.qber_analysis?.grover_amplification || {};
+      const rawEl = document.getElementById('lbl-grover-raw');
+      if (rawEl) rawEl.innerText = `${((grover.original_qber ?? qber) * 100).toFixed(2)}%`;
+      const ampEl = document.getElementById('lbl-grover-amp');
+      if (ampEl) ampEl.innerText = `${((grover.amplified_score ?? qber) * 100).toFixed(2)}%`;
+      const gainEl = document.getElementById('lbl-grover-gain');
+      if (gainEl) gainEl.innerText = `${grover.amplification_gain ?? 1.0}x`;
+      const gBar = document.getElementById('grover-bar');
+      if (gBar) gBar.style.width = `${Math.min(100, (((grover.amplified_score ?? qber)) / 0.30) * 100)}%`;
 
       const groverFlag = document.getElementById('grover-flag');
-      if (grover.weak_attack_detected) {
-        groverFlag.className = "text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200";
-        groverFlag.innerText = "Weak Tap Alert";
-      } else {
-        groverFlag.className = "text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600";
-        groverFlag.innerText = "Baseline";
+      if (groverFlag) {
+        if (grover.weak_attack_detected) {
+          groverFlag.className = "text-[10px] font-semibold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200";
+          groverFlag.innerText = "Weak Tap Alert";
+        } else {
+          groverFlag.className = "text-[10px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600";
+          groverFlag.innerText = "Baseline";
+        }
       }
 
       // Render 3D Bloch Sphere
@@ -1346,7 +1390,9 @@
       }
 
       // Render Basis Error Chart (Ensuring Non-Empty State)
-      renderPlotlyBasisChart(data.qber_analysis.basis_error_rates);
+      if (data.qber_analysis?.basis_error_rates) {
+        renderPlotlyBasisChart(data.qber_analysis.basis_error_rates);
+      }
 
       // Render Qubit Chips
       renderQubitChips(data.sample_qubits);
