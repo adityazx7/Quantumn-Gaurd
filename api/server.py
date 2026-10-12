@@ -50,6 +50,15 @@ app.add_middleware(
 # Configure Rate Limiter Middleware for heavy quantum operations
 app.add_middleware(RateLimiterMiddleware, max_requests_per_minute=200)
 
+@app.middleware("http")
+async def add_no_cache_header(request, call_next):
+    response = await call_next(request)
+    if request.url.path == "/" or request.url.path.endswith(".html"):
+        response.headers["Cache-Control"] = "no-cache, no-store, must-revalidate"
+        response.headers["Pragma"] = "no-cache"
+        response.headers["Expires"] = "0"
+    return response
+
 # Register Modular Routers
 app.include_router(simulation_router)
 app.include_router(attacks_router)

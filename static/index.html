@@ -1272,20 +1272,28 @@
       }
 
       // Enforcement Colors
-      const enfBadge = document.getElementById('badge-enforcement');
       const enfDot = document.getElementById('badge-enforcement-dot');
-      if (enforcement === 'MONITOR') {
-        enfBadge.className = "text-2xl font-black text-emerald-600 font-mono-num tracking-tight";
-        enfDot.className = "w-2 h-2 rounded-full bg-emerald-500";
-      } else if (enforcement === 'RESTRICT') {
-        enfBadge.className = "text-2xl font-black text-amber-600 font-mono-num tracking-tight";
-        enfDot.className = "w-2 h-2 rounded-full bg-amber-500";
-      } else if (enforcement === 'QUARANTINE') {
-        enfBadge.className = "text-2xl font-black text-orange-600 font-mono-num tracking-tight";
-        enfDot.className = "w-2 h-2 rounded-full bg-orange-500";
-      } else {
-        enfBadge.className = "text-2xl font-black text-rose-600 font-mono-num tracking-tight";
-        enfDot.className = "w-2 h-2 rounded-full bg-rose-500";
+      if (enfBadge) {
+        if (enforcement === 'MONITOR') {
+          enfBadge.className = "text-2xl font-black text-emerald-600 font-mono-num tracking-tight";
+        } else if (enforcement === 'RESTRICT') {
+          enfBadge.className = "text-2xl font-black text-amber-600 font-mono-num tracking-tight";
+        } else if (enforcement === 'QUARANTINE') {
+          enfBadge.className = "text-2xl font-black text-orange-600 font-mono-num tracking-tight";
+        } else {
+          enfBadge.className = "text-2xl font-black text-rose-600 font-mono-num tracking-tight";
+        }
+      }
+      if (enfDot) {
+        if (enforcement === 'MONITOR') {
+          enfDot.className = "w-2 h-2 rounded-full bg-emerald-500";
+        } else if (enforcement === 'RESTRICT') {
+          enfDot.className = "w-2 h-2 rounded-full bg-amber-500";
+        } else if (enforcement === 'QUARANTINE') {
+          enfDot.className = "w-2 h-2 rounded-full bg-orange-500";
+        } else {
+          enfDot.className = "w-2 h-2 rounded-full bg-rose-500";
+        }
       }
 
       // QBER Progress Bar & Dot
