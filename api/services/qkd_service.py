@@ -12,6 +12,8 @@ from typing import Dict, Any, List, Optional
 from concurrent.futures import ThreadPoolExecutor
 
 from core.attack_simulator import AdversarialAttackSimulator
+from core.adversarial_engine import SHARED_ADVERSARIAL_ENGINE, ConfigurableAdversaryEngine
+from core.real_test_cases import RealTestCaseService
 from core.state_registry import MicrosecondStateCache, CryptographicAuditLedger
 from core.threat_detector_stat import CrossVerifierConsensusEngine
 
@@ -30,7 +32,11 @@ class QKDSignatureService:
                                    L: int = 64,
                                    attack_type: str = "NONE",
                                    channel_noise: float = 0.01,
-                                   sid: Optional[str] = None) -> Dict[str, Any]:
+                                   sid: Optional[str] = None,
+                                   test_case_id: Optional[str] = None,
+                                   tamper_payload: bool = False,
+                                   eavesdrop_fraction: float = 1.0,
+                                   adversary_basis: str = "Z") -> Dict[str, Any]:
         """
         Executes quantum simulation asynchronously in worker thread pool.
         Keeps the FastAPI event loop responsive during heavy L=1024 simulations.
@@ -43,6 +49,37 @@ class QKDSignatureService:
             L,
             attack_type,
             channel_noise,
+            sid,
+            test_case_id,
+            tamper_payload,
+            eavesdrop_fraction,
+            adversary_basis
+        )
+        return result
+
+    async def run_adversary_simulation_async(self,
+                                             attack_type: str = "FORGERY",
+                                             test_case_id: str = "SWIFT_WIRE_TRANSFER",
+                                             eavesdrop_fraction: float = 1.0,
+                                             adversary_basis: str = "Z",
+                                             channel_noise: float = 0.01,
+                                             L: int = 64,
+                                             custom_message: Optional[str] = None,
+                                             sid: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Executes red-team adversarial attack simulation against real structured test cases.
+        """
+        loop = asyncio.get_running_loop()
+        result = await loop.run_in_executor(
+            SIMULATION_EXECUTOR,
+            SHARED_ADVERSARIAL_ENGINE.execute_adversarial_simulation,
+            attack_type,
+            test_case_id,
+            eavesdrop_fraction,
+            adversary_basis,
+            channel_noise,
+            L,
+            custom_message,
             sid
         )
         return result

@@ -31,6 +31,9 @@ from core.threat_detector_stat import (
 )
 
 
+from core.real_test_cases import RealTestCaseService
+
+
 class AdversarialAttackSimulator:
     """Simulates adversarial attacks, QDS operations, and defense orchestration end-to-end."""
 
@@ -45,7 +48,11 @@ class AdversarialAttackSimulator:
                      L: int = 64,
                      attack_type: str = "NONE",
                      channel_noise: float = 0.01,
-                     sid: Optional[str] = None) -> Dict[str, Any]:
+                     sid: Optional[str] = None,
+                     test_case_id: Optional[str] = None,
+                     tamper_payload: bool = False,
+                     eavesdrop_fraction: float = 1.0,
+                     adversary_basis: str = "Z") -> Dict[str, Any]:
         """
         Executes the 5-phase QDS workflow under specified attack conditions:
         attack_type in:
@@ -64,6 +71,17 @@ class AdversarialAttackSimulator:
             self._sid_counter += 1
             now_ns = time.time_ns()
             sid = f"SID-{now_ns}-{self._sid_counter:06d}"
+
+        # If real structured test case is requested, resolve payload and canonical digest
+        structured_test_case = None
+        active_digest = None
+        if test_case_id:
+            structured_test_case = RealTestCaseService.prepare_test_case_payload(
+                case_id=test_case_id,
+                apply_tampering=(attack_type == "FORGERY" or tamper_payload)
+            )
+            message = structured_test_case["active_canonical_str"]
+            active_digest = structured_test_case["active_digest"]
 
         # If attack is REPLAY, simulate a prior legitimate transaction with this SID first
         if attack_type == "REPLAY":
@@ -221,8 +239,11 @@ class AdversarialAttackSimulator:
 
         # Phase 4: Declared Classical Keys & Verification Projectors
         declared_message = message
-        if attack_type == "FORGERY":
-            declared_message = f"{message} [FORGED_PAYLOAD]"
+        if attack_type == "FORGERY" or tamper_payload:
+            if structured_test_case:
+                declared_message = structured_test_case["active_canonical_str"]
+            else:
+                declared_message = f"{message} [FORGED_PAYLOAD]"
             declared_basis_key, declared_eig_key = KeyGenerator.generate_keys_for_bit(L)
         else:
             declared_basis_key = basis_key
@@ -299,6 +320,7 @@ class AdversarialAttackSimulator:
             "session_id": sid,
             "message": declared_message,
             "original_message": message,
+            "structured_test_case": structured_test_case,
             "attack_type": attack_type,
             "key_length_L": L,
             "channel_noise": channel_noise,

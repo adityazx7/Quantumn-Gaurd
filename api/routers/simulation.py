@@ -45,7 +45,11 @@ async def run_simulation(req: SimulationRequest) -> Dict[str, Any]:
             L=req.L,
             attack_type=req.attack_type,
             channel_noise=req.channel_noise,
-            sid=req.sid
+            sid=req.sid,
+            test_case_id=req.test_case_id,
+            tamper_payload=req.tamper_payload,
+            eavesdrop_fraction=req.eavesdrop_fraction,
+            adversary_basis=req.adversary_basis
         )
         return result
     except Exception as e:
@@ -69,6 +73,10 @@ async def _handle_websocket_telemetry(websocket: WebSocket):
             attack_type = params.get("attack_type", "NONE")
             channel_noise = float(params.get("channel_noise", 0.01))
             sid = params.get("sid", None)
+            test_case_id = params.get("test_case_id", None)
+            tamper_payload = bool(params.get("tamper_payload", False))
+            eavesdrop_fraction = float(params.get("eavesdrop_fraction", 1.0))
+            adversary_basis = params.get("adversary_basis", "RANDOM")
 
             # Phase 1: Key Generation & Pauli Eigenstate Preparation
             await websocket.send_json({
@@ -121,7 +129,11 @@ async def _handle_websocket_telemetry(websocket: WebSocket):
                 L=L,
                 attack_type=attack_type,
                 channel_noise=channel_noise,
-                sid=sid
+                sid=sid,
+                test_case_id=test_case_id,
+                tamper_payload=tamper_payload,
+                eavesdrop_fraction=eavesdrop_fraction,
+                adversary_basis=adversary_basis
             )
 
             qber_data = result.get("qber_analysis", {})

@@ -1,24 +1,47 @@
 """
 api/schemas/simulation.py
-Pydantic v2 schemas for QDS simulation requests, responses, benchmarks, and statuses.
+Pydantic v2 schemas for QDS simulation requests, responses, benchmarks, test cases, and blockchain anchoring.
 """
 from typing import Optional, Dict, Any, List, Literal
 from pydantic import BaseModel, Field
 
 ValidAttackType = Literal[
     "NONE", "FORGERY", "IMPERSONATION", "INTERCEPT_RESEND",
-    "REPLAY", "UNAUTHORIZED_PROBE", "WEAK_INTERCEPT", "REPUDIATION"
+    "REPLAY", "UNAUTHORIZED_PROBE", "WEAK_INTERCEPT", "REPUDIATION",
+    "PNS_ATTACK"
 ]
 
 class SimulationRequest(BaseModel):
-    message: str = Field(default="Quantum Authenticated Transaction Payload", min_length=1, description="Payload message to sign")
+    message: str = Field(default="Quantum Authenticated Transaction Payload", min_length=1, description="Payload message or digest to sign")
     L: int = Field(default=64, ge=16, le=1024, description="Quantum key length in qubits")
     attack_type: ValidAttackType = Field(
         default="NONE",
-        description="Attack scenario: NONE, FORGERY, IMPERSONATION, INTERCEPT_RESEND, REPLAY, UNAUTHORIZED_PROBE, WEAK_INTERCEPT, REPUDIATION"
+        description="Attack scenario: NONE, FORGERY, IMPERSONATION, INTERCEPT_RESEND, REPLAY, UNAUTHORIZED_PROBE, WEAK_INTERCEPT, REPUDIATION, PNS_ATTACK"
     )
     channel_noise: float = Field(default=0.01, ge=0.0, le=0.30, description="Optical channel depolarizing noise probability")
     sid: Optional[str] = Field(default=None, description="Optional Session Identifier for anti-replay tracking")
+    test_case_id: Optional[str] = Field(default=None, description="Optional structured test case: SWIFT_WIRE_TRANSFER, EIP712_SMART_CONTRACT, SCADA_GRID_SWITCHING, CCSDS_SATELLITE_TELECOMMAND, HL7_FHIR_MEDICAL, JWT_OAUTH2_AUTH")
+    tamper_payload: bool = Field(default=False, description="Whether to simulate active field-level payload tampering")
+    eavesdrop_fraction: float = Field(default=1.0, ge=0.01, le=1.0, description="Adversary eavesdropping tap ratio eta")
+    adversary_basis: str = Field(default="Z", description="Adversary intercept basis: Z, X, Y, or RANDOM")
+
+
+class AdversarySimulateRequest(BaseModel):
+    attack_type: str = Field(default="FORGERY", description="Adversarial vector: FORGERY, INTERCEPT_RESEND, IMPERSONATION, REPLAY, WEAK_INTERCEPT, UNAUTHORIZED_PROBE, REPUDIATION, PNS_ATTACK")
+    test_case_id: str = Field(default="SWIFT_WIRE_TRANSFER", description="Real-world target test case ID")
+    eavesdrop_fraction: float = Field(default=1.0, ge=0.01, le=1.0, description="Eavesdropping tap percentage eta")
+    adversary_basis: str = Field(default="Z", description="Measurement basis chosen by adversary: Z, X, Y, RANDOM")
+    channel_noise: float = Field(default=0.01, ge=0.0, le=0.30, description="Background optical fiber noise floor")
+    L: int = Field(default=64, ge=16, le=1024, description="Quantum signature key length in qubits")
+    custom_message: Optional[str] = Field(default=None, description="Optional custom payload override")
+    sid: Optional[str] = Field(default=None, description="Optional Session ID")
+
+
+class TestCaseExecuteRequest(BaseModel):
+    test_case_id: str = Field(default="SWIFT_WIRE_TRANSFER", description="Target test case: SWIFT_WIRE_TRANSFER, EIP712_SMART_CONTRACT, SCADA_GRID_SWITCHING, CCSDS_SATELLITE_TELECOMMAND, HL7_FHIR_MEDICAL, JWT_OAUTH2_AUTH")
+    tamper_payload: bool = Field(default=False, description="Simulate selective payload field tampering")
+    channel_noise: float = Field(default=0.01, ge=0.0, le=0.30, description="Channel noise probability")
+    L: int = Field(default=64, ge=16, le=1024, description="Qubit key length")
 
 
 class DecisionInfo(BaseModel):
@@ -79,3 +102,4 @@ class StatusResponse(BaseModel):
     ledger_block_height: int
     ledger_integrity_valid: bool
     supported_attacks: List[str]
+    blockchain_contract: str = "contracts/QDSVerifier.sol"

@@ -265,6 +265,10 @@
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
         <span>Command Center</span>
       </button>
+      <button onclick="switchTab('adversary')" id="tab-btn-adversary" class="py-3 px-1 border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 whitespace-nowrap">
+        <svg class="w-4 h-4 text-rose-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+        <span>Adversary Studio &amp; Real Payloads</span>
+      </button>
       <button onclick="switchTab('explain')" id="tab-btn-explain" class="py-3 px-1 border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 whitespace-nowrap">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
         <span>Model Explanations</span>
@@ -511,10 +515,59 @@
               <input type="range" id="input-noise" min="0" max="0.25" step="0.01" value="0.01" oninput="updateNoise(this.value)" class="w-full" aria-label="Fiber Channel Noise Slider">
             </div>
 
-            <!-- Message Input -->
-            <div>
-              <label for="input-msg" class="block text-xs font-medium text-slate-700 mb-1">Transaction Message:</label>
-              <input type="text" id="input-msg" value="Pay $10,000,000 via Quantum Settlement Wire" class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white font-mono-num text-slate-800">
+            <!-- Payload Mode & Real-World Industry Test Cases -->
+            <div class="space-y-2 pt-2 border-t border-slate-100">
+              <div class="flex items-center justify-between">
+                <label for="select-test-case" class="text-xs font-bold text-slate-800 flex items-center space-x-1.5">
+                  <span class="w-2 h-2 rounded-full bg-indigo-500"></span>
+                  <span>Test Case Payload Mode:</span>
+                </label>
+                <span id="testcase-std-badge" class="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">ISO 20022</span>
+              </div>
+
+              <select id="select-test-case" onchange="onTestCaseChanged(this.value)" class="w-full text-xs p-2 rounded-xl border border-slate-200 bg-white font-medium text-slate-800 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                <option value="SWIFT_WIRE_TRANSFER">SWIFT MT103 / ISO 20022 ($10M Interbank Wire)</option>
+                <option value="EIP712_SMART_CONTRACT">Ethereum EIP-712 (PermitTransferFrom Smart Contract)</option>
+                <option value="SCADA_GRID_SWITCHING">SCADA IEC 60870-5-104 (400kV Substation Breaker)</option>
+                <option value="CCSDS_SATELLITE_TELECOMMAND">CCSDS Spacecraft Orbit Thruster Delta-V Burn</option>
+                <option value="HL7_FHIR_MEDICAL">HL7 FHIR DEA Schedule II Medication Prescription</option>
+                <option value="JWT_OAUTH2_AUTH">RFC 7519 OAuth2 Zero-Trust Access Token</option>
+                <option value="CUSTOM_TEXT">Custom Raw String Message</option>
+              </select>
+
+              <!-- Custom Text Input (Hidden by default when real test case is active) -->
+              <div id="container-custom-msg" class="hidden">
+                <input type="text" id="input-msg" value="Pay $10,000,000 via Quantum Settlement Wire" class="w-full text-xs px-3 py-2 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-white font-mono-num text-slate-800">
+              </div>
+
+              <!-- Tamper Payload Toggle Switch -->
+              <div id="container-tamper-toggle" class="p-2.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
+                <div>
+                  <div class="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                    <span>Tamper Payload (Inject Corruption)</span>
+                  </div>
+                  <div id="tamper-field-desc" class="text-[10px] text-slate-500 mt-0.5">Alters CreditorAccount IBAN to attacker account</div>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="toggle-tamper-payload" onchange="onTamperToggle(this.checked)" class="sr-only peer">
+                  <div class="w-7 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-rose-600"></div>
+                </label>
+              </div>
+
+              <!-- Collapsible Structured JSON Preview -->
+              <details class="text-[11px] group rounded-xl border border-slate-200 bg-slate-50 p-2">
+                <summary class="font-semibold text-slate-700 cursor-pointer flex items-center justify-between select-none">
+                  <span class="flex items-center gap-1">
+                    <svg class="w-3 h-3 text-slate-500 transition group-open:rotate-90" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"></path></svg>
+                    <span>View Canonical JSON Payload</span>
+                  </span>
+                  <span id="canonical-digest-badge" class="font-mono-num text-[10px] text-slate-500">SHA-256</span>
+                </summary>
+                <div class="mt-2 pt-2 border-t border-slate-200 font-mono-num text-[10px] bg-slate-900 text-slate-200 p-2.5 rounded-lg overflow-x-auto max-h-40">
+                  <pre id="json-payload-preview">Loading structured test case schema...</pre>
+                </div>
+              </details>
             </div>
           </div>
 
@@ -682,6 +735,215 @@
 
         <div id="qubits-chip-container" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-2.5">
           <!-- Populated dynamically -->
+        </div>
+      </div>
+
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- TAB: ADVERSARY STUDIO & REAL-WORLD ATTACK SIMULATOR     -->
+    <!-- ======================================================== -->
+    <div id="tab-adversary" class="hidden space-y-6">
+
+      <!-- TOP BANNER -->
+      <div class="q-card p-5">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="w-3 h-3 rounded-full bg-rose-500 dot-pulse"></span>
+              <h2 class="text-base font-bold text-slate-900">Red-Team Adversarial Attack Studio &amp; Real-World Cyber Range</h2>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 uppercase">MITRE ATT&amp;CK Matrix</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">Simulate sophisticated eavesdropping, man-in-the-middle, replay, and targeted field-level tampering attacks against structured enterprise payloads. QuantumGuard detects all anomalies using zero-AI information-theoretic physics.</p>
+          </div>
+          <div class="flex items-center space-x-2 shrink-0">
+            <button onclick="switchTab('explain')" class="px-3 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold text-xs transition border border-indigo-200 flex items-center space-x-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <span>Model Explanations</span>
+            </button>
+            <button onclick="switchTab('command-center')" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition border border-slate-200 flex items-center space-x-1.5">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"></path></svg>
+              <span>Command Center</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Adversary Studio Grid (5 cols Controls vs 7 cols Live Response) -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-5">
+
+          <!-- LEFT: ATTACK CONFIGURATION (5 Cols) -->
+          <div class="lg:col-span-5 space-y-4">
+            
+            <!-- 1. Attack Vector Selection -->
+            <div>
+              <label class="block text-xs font-bold text-slate-900 mb-1.5">1. Select Adversary Attack Vector (MITRE ATT&amp;CK):</label>
+              <select id="adv-select-attack" onchange="onAdvAttackProfileChanged(this.value)" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white font-medium text-slate-800 focus:ring-2 focus:ring-rose-500">
+                <option value="FORGERY">Selective Message &amp; Payload Forgery (T1565.001)</option>
+                <option value="INTERCEPT_RESEND">Quantum Man-in-the-Middle Intercept-Resend (T1557.002)</option>
+                <option value="IMPERSONATION">Rogue Signer Impersonation - Fake Quantum Key (T1589.001)</option>
+                <option value="REPLAY">High-Frequency Transcript Replay Attack (T1556)</option>
+                <option value="WEAK_INTERCEPT">Covert Weak Optical Fiber Tap - Grover Amplified (T1498.001)</option>
+                <option value="UNAUTHORIZED_PROBE">Verification Register Side-Channel Probe (T1056.004)</option>
+                <option value="REPUDIATION">Multi-Receiver Repudiation - Disputed Consensus (T1078.002)</option>
+                <option value="PNS_ATTACK">Photon Number Splitting (PNS) Decoy Tap (T1498.002)</option>
+              </select>
+            </div>
+
+            <!-- Profile Info Callout -->
+            <div id="adv-profile-card" class="p-3 rounded-xl border border-rose-100 bg-rose-50/50 text-xs space-y-1.5">
+              <div class="flex items-center justify-between">
+                <span id="adv-profile-name" class="font-bold text-rose-900">Selective Message Forgery</span>
+                <span id="adv-profile-mitre" class="font-mono-num font-bold text-[10px] px-2 py-0.5 rounded bg-rose-100 text-rose-800">T1565.001</span>
+              </div>
+              <p id="adv-profile-desc" class="text-[11px] text-slate-600">Adversary intercepts classical transmission and injects tampered fields while attempting to forge quantum public keys.</p>
+            </div>
+
+            <!-- 2. Target Structured Payload -->
+            <div>
+              <label class="block text-xs font-bold text-slate-900 mb-1.5">2. Target Real-World Test Case Payload:</label>
+              <select id="adv-select-case" onchange="onAdvTestCaseChanged(this.value)" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white font-medium text-slate-800 focus:ring-2 focus:ring-indigo-500">
+                <option value="SWIFT_WIRE_TRANSFER">SWIFT MT103 Interbank Wire ($10,000,000 USD)</option>
+                <option value="EIP712_SMART_CONTRACT">Ethereum EIP-712 PermitTransferFrom Smart Contract</option>
+                <option value="SCADA_GRID_SWITCHING">SCADA IEC 60870-5-104 Substation 400kV Breaker</option>
+                <option value="CCSDS_SATELLITE_TELECOMMAND">CCSDS Spacecraft Orbit Thruster Delta-V Burn</option>
+                <option value="HL7_FHIR_MEDICAL">HL7 FHIR DEA Schedule II Medication Prescription</option>
+                <option value="JWT_OAUTH2_AUTH">RFC 7519 OAuth2 Zero-Trust Access Token</option>
+              </select>
+            </div>
+
+            <!-- 3. Adversary Knobs (Eavesdrop Fraction & Basis) -->
+            <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50 space-y-3">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-800">3. Adversary Intercept Knobs:</span>
+                <span class="text-[10px] font-mono-num text-slate-500">Configurable</span>
+              </div>
+
+              <!-- Eavesdrop Fraction Slider -->
+              <div>
+                <div class="flex justify-between text-xs font-medium text-slate-700 mb-1">
+                  <span>Eavesdropping Tap Fraction (&eta;):</span>
+                  <strong id="adv-label-eta" class="text-rose-600 font-mono-num font-bold">100% (Full Tap)</strong>
+                </div>
+                <input type="range" id="adv-input-eta" min="0.05" max="1.00" step="0.05" value="1.00" oninput="onAdvEtaSlider(this.value)" class="w-full" aria-label="Eavesdropping Tap Fraction">
+                <div class="flex justify-between text-[10px] text-slate-400 mt-0.5 font-mono-num">
+                  <span>5% (Stealth)</span><span>25%</span><span>50%</span><span>75%</span><span>100% (MitM)</span>
+                </div>
+              </div>
+
+              <!-- Adversary Measurement Basis -->
+              <div>
+                <label class="block text-xs font-medium text-slate-700 mb-1">Eve Measurement Basis:</label>
+                <div class="grid grid-cols-4 gap-1.5 text-center text-xs">
+                  <button type="button" onclick="setAdvBasis('Z')" id="btn-adv-basis-Z" class="py-1.5 rounded-lg border border-indigo-400 bg-indigo-50 font-bold text-indigo-700">Z-Basis</button>
+                  <button type="button" onclick="setAdvBasis('X')" id="btn-adv-basis-X" class="py-1.5 rounded-lg border border-slate-200 bg-white font-medium text-slate-700">X-Basis</button>
+                  <button type="button" onclick="setAdvBasis('Y')" id="btn-adv-basis-Y" class="py-1.5 rounded-lg border border-slate-200 bg-white font-medium text-slate-700">Y-Basis</button>
+                  <button type="button" onclick="setAdvBasis('RANDOM')" id="btn-adv-basis-RANDOM" class="py-1.5 rounded-lg border border-slate-200 bg-white font-medium text-slate-700">Random</button>
+                </div>
+              </div>
+
+              <!-- Key Length L -->
+              <div>
+                <div class="flex justify-between text-xs font-medium text-slate-700 mb-1">
+                  <span>Quantum Teleportation Key Length (L):</span>
+                  <strong id="adv-label-L" class="text-indigo-600 font-mono-num font-bold">64 qubits</strong>
+                </div>
+                <input type="range" id="adv-input-L" min="16" max="256" step="16" value="64" oninput="document.getElementById('adv-label-L').innerText = this.value + ' qubits'" class="w-full" aria-label="Key Length L">
+              </div>
+            </div>
+
+            <!-- Launch Button -->
+            <button onclick="runAdversarySimulation()" id="btn-run-adv" class="w-full py-3 rounded-xl bg-gradient-to-r from-rose-600 to-indigo-600 hover:from-rose-700 hover:to-indigo-700 text-white font-bold text-xs uppercase tracking-wider shadow-sm transition flex items-center justify-center space-x-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+              <span id="btn-run-adv-text">Launch Adversarial Attack Simulation</span>
+            </button>
+
+          </div>
+
+          <!-- RIGHT: BLUE-TEAM RESPONSE & ATTACK LIFECYCLE (7 Cols) -->
+          <div class="lg:col-span-7 space-y-4">
+
+            <!-- Executive Defense Banner -->
+            <div id="adv-defense-banner" class="p-4 rounded-2xl border border-rose-200 bg-rose-50/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div class="flex items-start space-x-3">
+                <div id="adv-banner-icon-bg" class="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-rose-100 text-rose-700 border border-rose-200">
+                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                </div>
+                <div>
+                  <div class="flex items-center space-x-2">
+                    <span id="adv-banner-badge" class="px-2 py-0.5 text-[10px] font-bold rounded uppercase bg-rose-200 text-rose-900 font-mono-num">ATTACK DETECTED</span>
+                    <h3 id="adv-banner-title" class="text-sm font-bold text-slate-900">Quantum Man-in-the-Middle Mitigated</h3>
+                  </div>
+                  <p id="adv-banner-desc" class="text-xs text-slate-600 mt-1">Eavesdropping caused fatal quantum state collapse. Zero-AI threshold rule triggered graduated isolation.</p>
+                </div>
+              </div>
+              <div class="shrink-0 text-right">
+                <span id="adv-banner-enforcement" class="text-xs font-black font-mono-num px-2.5 py-1 rounded-lg bg-rose-600 text-white block">ENFORCEMENT: ISOLATE</span>
+                <span id="adv-banner-confidence" class="text-[10px] text-slate-500 font-mono-num mt-1 block">99.9% Statistical Confidence</span>
+              </div>
+            </div>
+
+            <!-- Quantum Metrics Micro-Grid -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              <div class="p-3 rounded-xl border border-slate-200 bg-white">
+                <span class="text-[10px] font-medium text-slate-500 block">Measured QBER</span>
+                <span id="adv-metric-qber" class="text-xl font-black text-rose-600 font-mono-num">25.00%</span>
+                <span class="text-[10px] text-slate-400 block font-mono-num">T_v = 12.00%</span>
+              </div>
+              <div class="p-3 rounded-xl border border-slate-200 bg-white">
+                <span class="text-[10px] font-medium text-slate-500 block">Bell CHSH (S)</span>
+                <span id="adv-metric-chsh" class="text-xl font-black text-indigo-600 font-mono-num">2.012</span>
+                <span class="text-[10px] text-slate-400 block font-mono-num">Limit: 2.000</span>
+              </div>
+              <div class="p-3 rounded-xl border border-slate-200 bg-white">
+                <span class="text-[10px] font-medium text-slate-500 block">Basis Asymmetry</span>
+                <span id="adv-metric-asym" class="text-xl font-black text-amber-600 font-mono-num">0.0%</span>
+                <span class="text-[10px] text-slate-400 block font-mono-num">Threshold: 20%</span>
+              </div>
+              <div class="p-3 rounded-xl border border-slate-200 bg-white">
+                <span class="text-[10px] font-medium text-slate-500 block">Blockchain Anchor</span>
+                <span id="adv-metric-block" class="text-xl font-black text-emerald-600 font-mono-num">Block #2</span>
+                <span class="text-[10px] text-slate-400 block font-mono-num">Merkle Root Valid</span>
+              </div>
+            </div>
+
+            <!-- 6-Step Interactive Attack Lifecycle Execution Trace -->
+            <div class="p-4 rounded-2xl border border-slate-200 bg-white space-y-3">
+              <div class="flex items-center justify-between pb-2 border-b border-slate-100">
+                <h4 class="text-xs font-bold text-slate-900 flex items-center space-x-1.5">
+                  <span class="w-2 h-2 rounded-full bg-indigo-600"></span>
+                  <span>End-to-End Attack Lifecycle Execution Trace (6 Phases)</span>
+                </h4>
+                <span class="text-[10px] font-mono-num text-slate-500">Live Hardware Telemetry</span>
+              </div>
+
+              <div id="adv-execution-trace" class="space-y-2">
+                <!-- Populated dynamically with 6 interactive steps -->
+              </div>
+            </div>
+
+            <!-- Structured Payload Cryptographic Hash Check -->
+            <div class="p-4 rounded-2xl border border-slate-200 bg-white space-y-2.5">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-bold text-slate-900">Cryptographic Digest Integrity &amp; Field Tamper Analysis:</span>
+                <span id="adv-tamper-pill" class="text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200">TAMPER DETECTED</span>
+              </div>
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] font-mono-num">
+                <div class="p-2 rounded-lg bg-slate-50 border border-slate-200">
+                  <span class="text-[10px] text-slate-500 block">Canonical Original SHA-256:</span>
+                  <span id="adv-orig-digest" class="text-slate-800 break-all">d41d8cd98f00b204e9800998ecf8427e...</span>
+                </div>
+                <div class="p-2 rounded-lg bg-slate-50 border border-slate-200">
+                  <span class="text-[10px] text-slate-500 block">In-Flight Active SHA-256:</span>
+                  <span id="adv-active-digest" class="text-rose-600 break-all">e3b0c44298fc1c149afbf4c8996fb924...</span>
+                </div>
+              </div>
+              <div id="adv-tamper-narrative" class="text-xs text-slate-600 bg-amber-50/70 p-2.5 rounded-xl border border-amber-200">
+                Attacker compromised transmission channel and altered targeted fields. Digest mismatch immediately prevented signature verification.
+              </div>
+            </div>
+
+          </div>
+
         </div>
       </div>
 
@@ -1128,20 +1390,39 @@
     </div>
 
     <!-- ======================================================== -->
-    <!-- TAB 5: AUDIT LEDGER                                      -->
+    <!-- TAB 5: AUDIT LEDGER & BLOCKCHAIN EXPLORER                   -->
     <!-- ======================================================== -->
     <div id="tab-ledger" class="hidden space-y-4">
       <div class="q-card p-5">
-        <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-slate-100">
           <div>
-            <h2 class="text-sm font-bold text-slate-900">SHA-256 Cryptographic Audit Ledger</h2>
-            <p class="text-xs text-slate-500 mt-0.5">Immutable chained audit blocks tracking every session burn, measurement, and enforcement.</p>
+            <div class="flex items-center space-x-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-emerald-500"></span>
+              <h2 class="text-sm font-bold text-slate-900">Cryptographic Blockchain Audit Ledger &amp; Merkle Trees</h2>
+            </div>
+            <p class="text-xs text-slate-500 mt-0.5">Immutable chained SHA-256 blocks with Merkle tree roots, multi-party verifier consensus, and EVM Solidity smart contract anchoring (EIP-712).</p>
           </div>
-          <div class="flex items-center space-x-2">
+          <div class="flex items-center space-x-2 flex-wrap gap-y-2">
             <span id="badge-ledger-integrity" class="px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">Integrity: Valid</span>
+            <button onclick="simulateLedgerTamperUI()" class="px-3 py-1.5 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold transition border border-amber-300 flex items-center space-x-1">
+              <svg class="w-3.5 h-3.5 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+              <span>Test Block Tamper</span>
+            </button>
             <button onclick="downloadLedgerJSON()" class="px-3 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold transition border border-slate-200">Export JSON</button>
             <button onclick="resetAuditLedger()" class="px-3 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 text-xs font-semibold transition border border-rose-200">Reset</button>
           </div>
+        </div>
+
+        <!-- Tamper Alert Banner (Hidden by default) -->
+        <div id="ledger-tamper-alert" class="hidden mt-3 p-3.5 rounded-xl border border-rose-300 bg-rose-50 flex items-center justify-between">
+          <div class="flex items-center space-x-2.5">
+            <span class="w-3 h-3 rounded-full bg-rose-500 dot-pulse"></span>
+            <div>
+              <strong class="text-xs text-rose-900 block font-bold">BLOCKCHAIN INTEGRITY BREACH DETECTED:</strong>
+              <span id="ledger-tamper-msg" class="text-[11px] text-rose-700">Block #1 data was maliciously altered. Cryptographic hash chain validation failed!</span>
+            </div>
+          </div>
+          <button onclick="resetAuditLedger()" class="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition">Restore Ledger</button>
         </div>
 
         <div class="mt-3 overflow-x-auto">
@@ -1154,7 +1435,9 @@
                 <th class="py-2.5 px-3">Decision</th>
                 <th class="py-2.5 px-3 font-mono-num">QBER</th>
                 <th class="py-2.5 px-3 font-mono-num">CHSH (S)</th>
+                <th class="py-2.5 px-3 font-mono-num">Merkle Root</th>
                 <th class="py-2.5 px-3 font-mono-num">Block Hash</th>
+                <th class="py-2.5 px-3 text-center">Smart Contract</th>
               </tr>
             </thead>
             <tbody id="ledger-tbody" class="divide-y divide-slate-100 font-mono-num text-[11px]">
@@ -1352,6 +1635,41 @@
     </div>
   </div>
 
+  <!-- SOLIDITY CALLDATA MODAL -->
+  <div id="solidityModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 hidden flex items-center justify-center p-4" role="dialog" aria-modal="true" aria-labelledby="solidity-modal-title">
+    <div class="bg-white rounded-2xl max-w-2xl w-full p-5 shadow-2xl border border-slate-200 space-y-3.5">
+      <div class="flex items-center justify-between pb-2.5 border-b border-slate-100">
+        <div class="flex items-center space-x-2">
+          <div class="w-7 h-7 rounded-lg bg-emerald-600 text-white flex items-center justify-center font-bold text-xs">EVM</div>
+          <div>
+            <h3 id="solidity-modal-title" class="text-sm font-bold text-slate-900">Ethereum Smart Contract Anchoring (EIP-712)</h3>
+            <p class="text-[11px] text-slate-500">Target Contract: <strong class="text-indigo-600 font-mono-num">contracts/QDSVerifier.sol</strong> &bull; Function: <span class="font-mono-num">verifySessionAndAnchor(...)</span></p>
+          </div>
+        </div>
+        <button onclick="closeSolidityModal()" class="text-slate-400 hover:text-slate-600 text-lg font-bold p-1" aria-label="Close Modal">&times;</button>
+      </div>
+
+      <div>
+        <label class="block text-xs font-semibold text-slate-700 mb-1">Solidity Struct ABI Calldata:</label>
+        <div class="bg-slate-900 text-emerald-400 font-mono-num text-xs p-3.5 rounded-xl overflow-x-auto max-h-56">
+          <pre id="solidityCalldataText">Loading ABI Calldata...</pre>
+        </div>
+      </div>
+
+      <div class="p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600">
+        <p class="text-[11px]"><strong class="text-slate-800">On-Chain Verification Rule:</strong> The smart contract checks that the block hash satisfies SHA-256 chaining, verifies the Merkle root leaf inclusion, and guarantees that measured QBER &le; threshold with quorum consensus signatures before state finalization.</p>
+      </div>
+
+      <div class="flex justify-between items-center text-xs text-slate-600 pt-1 border-t border-slate-100">
+        <button onclick="copySolidityCalldata()" class="px-3.5 py-1.5 rounded-lg bg-emerald-600 text-white font-semibold hover:bg-emerald-700 transition flex items-center space-x-1.5">
+          <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3"></path></svg>
+          <span>Copy Calldata</span>
+        </button>
+        <button onclick="closeSolidityModal()" class="px-3.5 py-1.5 rounded-lg bg-slate-200 text-slate-700 font-semibold hover:bg-slate-300 transition">Close</button>
+      </div>
+    </div>
+  </div>
+
   <!-- CORE LOGIC & TELEMETRY ENGINE -->
   <script>
     let currentAttack = "NONE";
@@ -1376,7 +1694,7 @@
 
     // Tab Navigation
     function switchTab(tabId) {
-      const tabs = ['command-center', 'explain', 'matrix', 'benchmarks', 'theory', 'ledger', 'noise', 'multiparty'];
+      const tabs = ['command-center', 'adversary', 'explain', 'matrix', 'benchmarks', 'theory', 'ledger', 'noise', 'multiparty'];
       tabs.forEach(t => {
         const el = document.getElementById(`tab-${t}`);
         const btn = document.getElementById(`tab-btn-${t}`);
@@ -1391,6 +1709,7 @@
         }
       });
 
+      if (tabId === 'adversary') initAdversaryStudio();
       if (tabId === 'explain' && lastSimResult) updateExplanationPage(lastSimResult);
       if (tabId === 'matrix') fetchAttackMatrix();
       if (tabId === 'benchmarks') fetchBenchmarks();
@@ -1476,11 +1795,24 @@
       const msg = (msgInput && msgInput.value) ? msgInput.value : "Quantum Authenticated Transaction Payload";
       const useWs = document.getElementById('toggle-ws-telemetry') && document.getElementById('toggle-ws-telemetry').checked;
 
+      const testCaseSelect = document.getElementById('select-test-case');
+      const isCustomText = testCaseSelect && testCaseSelect.value === 'CUSTOM_TEXT';
+      const testCaseId = (testCaseSelect && !isCustomText) ? testCaseSelect.value : null;
+      const tamperToggle = document.getElementById('toggle-tamper-payload');
+      const tamperPayload = Boolean(testCaseId && tamperToggle && tamperToggle.checked);
+
+      let effectiveAttack = currentAttack;
+      if (tamperPayload && currentAttack === 'NONE') {
+        effectiveAttack = 'FORGERY';
+      }
+
       const payload = {
         message: msg,
         L: currentL,
-        attack_type: currentAttack,
-        channel_noise: currentNoise
+        attack_type: effectiveAttack,
+        channel_noise: currentNoise,
+        test_case_id: testCaseId,
+        tamper_payload: tamperPayload
       };
 
       setStep(1, "Phase 1: Alice Pauli Eigenstate Preparation");
@@ -2308,7 +2640,7 @@
     }
 
     // ==========================================
-    // TAB 5: AUDIT LEDGER FETCHER
+    // TAB 5: AUDIT LEDGER & BLOCKCHAIN FETCHER
     // ==========================================
     async function fetchAuditLedger() {
       try {
@@ -2323,10 +2655,21 @@
           'px-2.5 py-1 rounded-lg text-xs font-bold bg-emerald-50 text-emerald-800 border border-emerald-200' :
           'px-2.5 py-1 rounded-lg text-xs font-bold bg-rose-50 text-rose-800 border border-rose-200';
 
+        const alertBox = document.getElementById('ledger-tamper-alert');
+        if (alertBox) {
+          if (!data.integrity_verified) {
+            alertBox.classList.remove('hidden');
+          } else {
+            alertBox.classList.add('hidden');
+          }
+        }
+
         data.chain.forEach(blk => {
           const tr = document.createElement('tr');
           const isPass = blk.decision === 'ACCEPTED';
           tr.className = isPass ? 'hover:bg-emerald-50/20' : 'hover:bg-rose-50/20';
+
+          const merkleText = blk.merkle_root ? `${blk.merkle_root.substring(0, 14)}...` : 'N/A';
 
           tr.innerHTML = `
             <td class="py-2 px-3 font-bold text-slate-900">#${blk.index}</td>
@@ -2339,12 +2682,330 @@
             <td class="py-2 px-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold ${isPass ? 'bg-emerald-100 text-emerald-800' : 'bg-rose-100 text-rose-800'}">${blk.decision}</span></td>
             <td class="py-2 px-3 font-mono-num">${(blk.qber * 100).toFixed(2)}%</td>
             <td class="py-2 px-3 font-mono-num">${blk.chsh_s.toFixed(3)}</td>
-            <td class="py-2 px-3 text-slate-500 truncate max-w-xs cursor-pointer hover:text-indigo-600" onclick="navigator.clipboard.writeText('${blk.hash}'); showToast('Hash copied to clipboard', 'success');" title="Click to copy full hash: ${blk.hash}">${blk.hash.substring(0, 16)}...</td>
+            <td class="py-2 px-3 font-mono-num text-slate-600 truncate max-w-xs cursor-pointer hover:text-indigo-600" title="Merkle Root: ${blk.merkle_root || ''}" onclick="navigator.clipboard.writeText('${blk.merkle_root || ''}'); showToast('Merkle root copied', 'success');">${merkleText}</td>
+            <td class="py-2 px-3 text-slate-500 truncate max-w-xs cursor-pointer hover:text-indigo-600" onclick="navigator.clipboard.writeText('${blk.hash}'); showToast('Hash copied to clipboard', 'success');" title="Click to copy full hash: ${blk.hash}">${blk.hash.substring(0, 14)}...</td>
+            <td class="py-2 px-3 text-center">
+              <button onclick="openSolidityModal(${blk.index})" class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 transition">
+                EVM ABI
+              </button>
+            </td>
           `;
           tbody.appendChild(tr);
         });
       } catch (err) {
         console.error("Audit ledger fetch error:", err);
+      }
+    }
+
+    async function simulateLedgerTamperUI() {
+      try {
+        const res = await fetch('/api/audit-ledger/tamper-test?block_index=1&fake_qber=0.55', { method: 'POST' });
+        if (!res.ok) {
+          // If only genesis block exists, test against block 0
+          const res0 = await fetch('/api/audit-ledger/tamper-test?block_index=0&fake_qber=0.55', { method: 'POST' });
+          if (!res0.ok) throw new Error("Run a simulation first to create historical blocks.");
+        }
+        await fetchAuditLedger();
+        showToast("Tamper injected into Block #1! Hash-chain integrity check failed immediately as expected.", "error");
+      } catch (err) {
+        showToast("Tamper test error: " + err.message, "error");
+      }
+    }
+
+    let activeSolidityCalldataRaw = "";
+    async function openSolidityModal(blockIndex) {
+      const modal = document.getElementById('solidityModal');
+      modal.classList.remove('hidden');
+      try {
+        const res = await fetch(`/api/audit-ledger/solidity-calldata/${blockIndex}`);
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        activeSolidityCalldataRaw = JSON.stringify(data.calldata, null, 2);
+        document.getElementById('solidityCalldataText').innerText =
+          `// EIP-712 Structured Call for QDSVerifier.sol (Block #${blockIndex})\n` +
+          `// Target: verifySessionAndAnchor(proof)\n\n` +
+          activeSolidityCalldataRaw;
+      } catch (err) {
+        document.getElementById('solidityCalldataText').innerText = "Calldata error: " + err.message;
+      }
+    }
+
+    function closeSolidityModal() {
+      document.getElementById('solidityModal').classList.add('hidden');
+    }
+
+    function copySolidityCalldata() {
+      if (activeSolidityCalldataRaw) {
+        navigator.clipboard.writeText(activeSolidityCalldataRaw);
+        showToast("Solidity ABI Calldata copied to clipboard!", "success");
+      }
+    }
+
+    // ==========================================
+    // REAL-WORLD INDUSTRY TEST CASES CONTROLLER
+    // ==========================================
+    let cachedTestCases = {};
+
+    async function onTestCaseChanged(caseId) {
+      const customDiv = document.getElementById('container-custom-msg');
+      const tamperDiv = document.getElementById('container-tamper-toggle');
+      const badge = document.getElementById('testcase-std-badge');
+      const descEl = document.getElementById('tamper-field-desc');
+      const digestBadge = document.getElementById('canonical-digest-badge');
+      const preview = document.getElementById('json-payload-preview');
+
+      if (caseId === 'CUSTOM_TEXT') {
+        if (customDiv) customDiv.classList.remove('hidden');
+        if (tamperDiv) tamperDiv.classList.add('hidden');
+        if (badge) badge.innerText = "Custom Raw Text";
+        if (preview) preview.innerText = JSON.stringify({ message: document.getElementById('input-msg')?.value || "" }, null, 2);
+        return;
+      }
+
+      if (customDiv) customDiv.classList.add('hidden');
+      if (tamperDiv) tamperDiv.classList.remove('hidden');
+
+      try {
+        let caseData = cachedTestCases[caseId];
+        if (!caseData) {
+          const res = await fetch(`/api/test-cases/${caseId}`);
+          if (!res.ok) throw new Error("Could not fetch test case");
+          caseData = await res.json();
+          cachedTestCases[caseId] = caseData;
+        }
+
+        if (badge) badge.innerText = caseData.standard || "Enterprise Standard";
+        if (descEl) descEl.innerText = caseData.tamper_options ?
+          `Target: ${caseData.tamper_options.field} → ${caseData.tamper_options.tampered_value}` :
+          "Tamper options available";
+        if (digestBadge) digestBadge.innerText = `SHA-256: ${caseData.canonical_digest.substring(0, 16)}...`;
+        if (preview) preview.innerText = JSON.stringify(caseData.payload, null, 2);
+      } catch (err) {
+        console.error("Test case load error:", err);
+      }
+    }
+
+    function onTamperToggle(isTampered) {
+      const descEl = document.getElementById('tamper-field-desc');
+      if (isTampered) {
+        if (descEl) descEl.className = "text-[10px] text-rose-600 font-bold mt-0.5";
+        showToast("Adversarial Field Tampering ENABLED: Modifying payload values in-flight.", "error");
+      } else {
+        if (descEl) descEl.className = "text-[10px] text-slate-500 mt-0.5";
+        showToast("Tamper Mode DISABLED: Legitimate payload restored.", "info");
+      }
+    }
+
+    // ==========================================
+    // ADVERSARY STUDIO RED-TEAM CONTROLLER
+    // ==========================================
+    let advProfilesCache = [];
+    let activeAdvBasis = "Z";
+
+    async function initAdversaryStudio() {
+      try {
+        if (advProfilesCache.length === 0) {
+          const res = await fetch('/api/adversary/profiles');
+          advProfilesCache = await res.json();
+        }
+        onAdvAttackProfileChanged(document.getElementById('adv-select-attack')?.value || "FORGERY");
+      } catch (err) {
+        console.error("Init adversary studio error:", err);
+      }
+    }
+
+    function onAdvAttackProfileChanged(profileId) {
+      const p = advProfilesCache.find(x => x.id === profileId);
+      if (p) {
+        const nameEl = document.getElementById('adv-profile-name');
+        const mitreEl = document.getElementById('adv-profile-mitre');
+        const descEl = document.getElementById('adv-profile-desc');
+        if (nameEl) nameEl.innerText = p.name;
+        if (mitreEl) mitreEl.innerText = p.mitre_id;
+        if (descEl) descEl.innerText = p.description;
+
+        const etaInput = document.getElementById('adv-input-eta');
+        if (etaInput && p.default_eavesdrop_fraction !== undefined) {
+          etaInput.value = p.default_eavesdrop_fraction;
+          onAdvEtaSlider(p.default_eavesdrop_fraction);
+        }
+      }
+    }
+
+    function onAdvTestCaseChanged(caseId) {
+      // Synchronize with test case
+    }
+
+    function onAdvEtaSlider(val) {
+      const num = parseFloat(val);
+      const pct = Math.round(num * 100);
+      const label = document.getElementById('adv-label-eta');
+      if (label) {
+        if (pct <= 10) label.innerText = `${pct}% (Covert Weak Optical Tap)`;
+        else if (pct <= 40) label.innerText = `${pct}% (Partial Fiber Splitter)`;
+        else if (pct <= 80) label.innerText = `${pct}% (Heavy Eavesdropping)`;
+        else label.innerText = `${pct}% (Full Man-in-the-Middle)`;
+      }
+    }
+
+    function setAdvBasis(basis) {
+      activeAdvBasis = basis;
+      ['Z', 'X', 'Y', 'RANDOM'].forEach(b => {
+        const btn = document.getElementById(`btn-adv-basis-${b}`);
+        if (btn) {
+          if (b === basis) {
+            btn.className = "py-1.5 rounded-lg border border-indigo-400 bg-indigo-50 font-bold text-indigo-700";
+          } else {
+            btn.className = "py-1.5 rounded-lg border border-slate-200 bg-white font-medium text-slate-700";
+          }
+        }
+      });
+    }
+
+    async function runAdversarySimulation() {
+      const attackType = document.getElementById('adv-select-attack').value;
+      const testCaseId = document.getElementById('adv-select-case').value;
+      const eta = parseFloat(document.getElementById('adv-input-eta').value);
+      const keyL = parseInt(document.getElementById('adv-input-L').value);
+
+      const btn = document.getElementById('btn-run-adv');
+      const btnText = document.getElementById('btn-run-adv-text');
+      if (btn) btn.disabled = true;
+      if (btnText) btnText.innerText = "Simulating Red-Team Engagement...";
+
+      try {
+        const res = await fetch('/api/adversary/simulate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            attack_type: attackType,
+            test_case_id: testCaseId,
+            eavesdrop_fraction: eta,
+            adversary_basis: activeAdvBasis,
+            tamper_payload: (attackType === 'FORGERY'),
+            L: keyL,
+            channel_noise: 0.01
+          })
+        });
+
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        lastSimResult = data;
+
+        // Render Adversary Studio Output
+        renderAdversaryOutput(data);
+        showToast(`Adversary simulation finished: ${data.decision.threat_type}`, data.decision.decision === 'ACCEPTED' ? "info" : "error");
+      } catch (err) {
+        showToast("Adversary simulation error: " + err.message, "error");
+      } finally {
+        if (btn) btn.disabled = false;
+        if (btnText) btnText.innerText = "Launch Adversarial Attack Simulation";
+      }
+    }
+
+    function renderAdversaryOutput(data) {
+      const dec = data.decision || {};
+      const qber = data.qber_analysis?.qber ?? 0.0;
+      const sVal = data.chsh?.S_value ?? 2.82;
+      const asym = data.qber_analysis?.basis_asymmetry ?? 0.0;
+      const isAccepted = dec.decision === 'ACCEPTED';
+
+      // Banner
+      const banner = document.getElementById('adv-defense-banner');
+      const bannerBadge = document.getElementById('adv-banner-badge');
+      const bannerTitle = document.getElementById('adv-banner-title');
+      const bannerDesc = document.getElementById('adv-banner-desc');
+      const bannerEnf = document.getElementById('adv-banner-enforcement');
+      const bannerConf = document.getElementById('adv-banner-confidence');
+      const iconBg = document.getElementById('adv-banner-icon-bg');
+
+      if (isAccepted) {
+        if (banner) banner.className = "p-4 rounded-2xl border border-emerald-200 bg-emerald-50/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4";
+        if (bannerBadge) {
+          bannerBadge.className = "px-2 py-0.5 text-[10px] font-bold rounded uppercase bg-emerald-200 text-emerald-900 font-mono-num";
+          bannerBadge.innerText = "SIGNATURE VALID";
+        }
+        if (bannerTitle) bannerTitle.innerText = "Normal Baseline Operation";
+        if (bannerDesc) bannerDesc.innerText = dec.threat_description || "All quantum states matched Alice's prepared eigenstates.";
+        if (bannerEnf) {
+          bannerEnf.className = "text-xs font-black font-mono-num px-2.5 py-1 rounded-lg bg-emerald-600 text-white block";
+          bannerEnf.innerText = "ENFORCEMENT: MONITOR";
+        }
+        if (iconBg) iconBg.className = "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-emerald-100 text-emerald-700 border border-emerald-200";
+      } else {
+        if (banner) banner.className = "p-4 rounded-2xl border border-rose-200 bg-rose-50/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4";
+        if (bannerBadge) {
+          bannerBadge.className = "px-2 py-0.5 text-[10px] font-bold rounded uppercase bg-rose-200 text-rose-900 font-mono-num";
+          bannerBadge.innerText = "ATTACK DETECTED";
+        }
+        if (bannerTitle) bannerTitle.innerText = `Threat Neutralized: ${dec.threat_type?.replace(/_/g, ' ') || 'Attack Blocked'}`;
+        if (bannerDesc) bannerDesc.innerText = dec.threat_description || "Zero-AI statistical rules detected quantum disturbance.";
+        if (bannerEnf) {
+          bannerEnf.className = "text-xs font-black font-mono-num px-2.5 py-1 rounded-lg bg-rose-600 text-white block";
+          bannerEnf.innerText = `ENFORCEMENT: ${dec.enforcement_level || 'ISOLATE'}`;
+        }
+        if (iconBg) iconBg.className = "w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-rose-100 text-rose-700 border border-rose-200";
+      }
+
+      if (bannerConf) bannerConf.innerText = `${dec.confidence_percentage?.toFixed(1) || 99.9}% Statistical Confidence`;
+
+      // Metrics
+      const qberEl = document.getElementById('adv-metric-qber');
+      if (qberEl) {
+        qberEl.innerText = `${(qber * 100).toFixed(2)}%`;
+        qberEl.className = qber <= 0.12 ? "text-xl font-black text-emerald-600 font-mono-num" : "text-xl font-black text-rose-600 font-mono-num";
+      }
+      const chshEl = document.getElementById('adv-metric-chsh');
+      if (chshEl) {
+        chshEl.innerText = sVal.toFixed(3);
+        chshEl.className = sVal >= 2.50 ? "text-xl font-black text-indigo-600 font-mono-num" : "text-xl font-black text-rose-600 font-mono-num";
+      }
+      const asymEl = document.getElementById('adv-metric-asym');
+      if (asymEl) asymEl.innerText = `${(asym * 100).toFixed(1)}%`;
+      const blockEl = document.getElementById('adv-metric-block');
+      if (blockEl) blockEl.innerText = `Block #${data.blockchain_block?.index ?? (data.ledger_blocks_count || 1)}`;
+
+      // 6-Step Execution Trace
+      const traceContainer = document.getElementById('adv-execution-trace');
+      if (traceContainer && data.execution_trace) {
+        traceContainer.innerHTML = '';
+        data.execution_trace.forEach(item => {
+          const stepDiv = document.createElement('div');
+          stepDiv.className = "p-2.5 rounded-xl border border-slate-100 bg-slate-50 flex items-start space-x-3";
+          stepDiv.innerHTML = `
+            <div class="w-6 h-6 rounded-full bg-indigo-600 text-white font-bold text-xs flex items-center justify-center shrink-0 font-mono-num">${item.step}</div>
+            <div class="min-w-0">
+              <div class="flex items-center space-x-2">
+                <span class="text-xs font-bold text-slate-800">${item.phase}</span>
+                <span class="text-[10px] font-mono-num px-1.5 py-0.2 rounded bg-slate-200 text-slate-700">${item.actor}</span>
+              </div>
+              <p class="text-xs text-slate-600 mt-0.5">${item.action}</p>
+            </div>
+          `;
+          traceContainer.appendChild(stepDiv);
+        });
+      }
+
+      // Cryptographic Digest Checks
+      const origDigEl = document.getElementById('adv-orig-digest');
+      const actDigEl = document.getElementById('adv-active-digest');
+      const tamperPill = document.getElementById('adv-tamper-pill');
+      const narrativeEl = document.getElementById('adv-tamper-narrative');
+
+      const origDig = data.test_case?.original_digest || "";
+      const actDig = data.test_case?.active_digest || "";
+      const isTampered = data.test_case?.tamper_info?.tampered || false;
+
+      if (origDigEl) origDigEl.innerText = origDig;
+      if (actDigEl) actDigEl.innerText = actDig;
+      if (tamperPill) {
+        tamperPill.innerText = isTampered ? "TAMPER DETECTED (FORGERY)" : "UNCOMPROMISED (LEGITIMATE)";
+        tamperPill.className = isTampered ?
+          "text-[10px] font-bold px-2 py-0.5 rounded-full bg-rose-50 text-rose-700 border border-rose-200" :
+          "text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200";
+      }
+      if (narrativeEl) {
+        narrativeEl.innerText = data.test_case?.tamper_info?.attack_narrative || "Transaction verified authentic.";
       }
     }
 
@@ -2570,6 +3231,7 @@
 
     // Initialize application on load
     window.onload = () => {
+      onTestCaseChanged('SWIFT_WIRE_TRANSFER');
       runSimulation();
     };
   </script>
