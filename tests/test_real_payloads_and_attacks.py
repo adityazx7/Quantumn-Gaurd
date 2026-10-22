@@ -277,3 +277,6 @@ def test_api_ledger_tamper_test_endpoint():
     assert data["tamper_detected"] is True
     assert data["integrity_verified_after_tamper"] is False
     assert data["verdict"] == "BLOCKCHAIN_TAMPER_DETECTED"
+
+    # Reset ledger back to genesis so subsequent test suites start with valid state
+    client.post("/api/audit-ledger/reset")

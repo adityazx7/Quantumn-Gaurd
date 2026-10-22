@@ -273,6 +273,14 @@
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path></svg>
         <span>Model Explanations</span>
       </button>
+      <button onclick="switchTab('pqc')" id="tab-btn-pqc" class="py-3 px-1 border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 whitespace-nowrap">
+        <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+        <span>Post-Quantum Crypto (PQC)</span>
+      </button>
+      <button onclick="switchTab('soc')" id="tab-btn-soc" class="py-3 px-1 border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 whitespace-nowrap">
+        <svg class="w-4 h-4 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+        <span>Cyber SOC &amp; Active Defense</span>
+      </button>
       <button onclick="switchTab('matrix')" id="tab-btn-matrix" class="py-3 px-1 border-b-2 border-transparent text-slate-500 hover:text-slate-800 flex items-center space-x-1.5 whitespace-nowrap">
         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
         <span>Threat Matrix</span>
@@ -1304,6 +1312,226 @@
     </div>
 
     <!-- ======================================================== -->
+    <!-- TAB: POST-QUANTUM CRYPTOGRAPHY (NIST FIPS 204 / 205)    -->
+    <!-- ======================================================== -->
+    <div id="tab-pqc" class="hidden space-y-6">
+      <div class="q-card p-5">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="w-3 h-3 rounded-full bg-emerald-500 dot-pulse"></span>
+              <h2 class="text-base font-bold text-slate-900">Post-Quantum Cryptography &amp; 3-Tier Hybrid Defense Suite</h2>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 uppercase">NIST FIPS 204 / 205</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">Implements official NIST Post-Quantum Standards (FIPS 204 ML-DSA Dilithium &amp; FIPS 205 SLH-DSA SPHINCS+) alongside Quantum Digital Signatures (QDS) to defeat Store-Now-Decrypt-Later (SNDL) attacks.</p>
+          </div>
+          <div class="flex items-center space-x-2 shrink-0">
+            <button onclick="switchTab('adversary')" class="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 font-semibold text-xs transition border border-rose-200">
+              Adversary Studio
+            </button>
+            <button onclick="switchTab('command-center')" class="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold text-xs transition border border-slate-200">
+              Command Center
+            </button>
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-5">
+          <!-- Left Controls (5 cols) -->
+          <div class="lg:col-span-5 space-y-4">
+            <div>
+              <label class="block text-xs font-bold text-slate-900 mb-1.5">1. Target Structured Payload:</label>
+              <select id="pqc-select-case" class="w-full text-xs p-2.5 rounded-xl border border-slate-200 bg-white font-medium text-slate-800">
+                <option value="SWIFT_WIRE_TRANSFER">SWIFT MT103 Interbank Wire ($10,000,000 USD)</option>
+                <option value="EIP712_SMART_CONTRACT">Ethereum EIP-712 PermitTransferFrom Smart Contract</option>
+                <option value="SCADA_GRID_SWITCHING">SCADA IEC 60870-5-104 Substation 400kV Breaker</option>
+                <option value="CCSDS_SATELLITE_TELECOMMAND">CCSDS Spacecraft Orbit Thruster Delta-V Burn</option>
+                <option value="HL7_FHIR_MEDICAL">HL7 FHIR DEA Schedule II Medication Prescription</option>
+                <option value="JWT_OAUTH2_AUTH">RFC 7519 OAuth2 Zero-Trust Access Token</option>
+              </select>
+            </div>
+
+            <!-- Quantum Attack Simulator Switch -->
+            <div class="p-3.5 rounded-xl border border-purple-200 bg-purple-50/50 space-y-2">
+              <div class="flex items-center justify-between">
+                <div>
+                  <div class="text-xs font-bold text-purple-900 flex items-center space-x-1.5">
+                    <span class="w-2 h-2 rounded-full bg-purple-600"></span>
+                    <span>Simulate Shor's Algorithm (FTQC)</span>
+                  </div>
+                  <p class="text-[10px] text-purple-700 mt-0.5">Tests vulnerability against a Fault-Tolerant Quantum Computer executing Shor's discrete-log factorization.</p>
+                </div>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" id="toggle-shor-attack" class="sr-only peer">
+                  <div class="w-7 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-purple-600"></div>
+                </label>
+              </div>
+            </div>
+
+            <!-- Tamper Toggle -->
+            <div class="p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex items-center justify-between">
+              <div>
+                <span class="text-xs font-bold text-slate-800 block">Inject Selective Field Corruption</span>
+                <span class="text-[10px] text-slate-500">Tamper with in-flight payload to test cryptographic digest rejection.</span>
+              </div>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" id="pqc-toggle-tamper" class="sr-only peer">
+                <div class="w-7 h-4 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-rose-600"></div>
+              </label>
+            </div>
+
+            <!-- Sign & Verify Button -->
+            <button onclick="runHybridPQCExecution()" id="btn-run-pqc" class="w-full py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider transition shadow-xs flex items-center justify-center space-x-2">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"></path></svg>
+              <span>Execute 3-Tier Hybrid Verification</span>
+            </button>
+          </div>
+
+          <!-- Right: 3-Tier Defense Results (7 cols) -->
+          <div class="lg:col-span-7 space-y-3.5">
+            <div id="pqc-verdict-banner" class="p-4 rounded-2xl border border-emerald-200 bg-emerald-50/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+              <div>
+                <span id="pqc-verdict-badge" class="px-2 py-0.5 text-[10px] font-bold rounded uppercase bg-emerald-100 text-emerald-800">UNCONDITIONALLY SECURE</span>
+                <h3 id="pqc-verdict-title" class="text-sm font-bold text-slate-900 mt-1">3-Tier Hybrid Defense Verified</h3>
+                <p id="pqc-verdict-desc" class="text-xs text-slate-600 mt-0.5">Payload protected against both classical and quantum adversaries.</p>
+              </div>
+              <span id="pqc-resilience-badge" class="text-xs font-black font-mono-num px-2.5 py-1 rounded-lg bg-emerald-600 text-white shrink-0">SNDL IMMUNE</span>
+            </div>
+
+            <!-- 3 Tiers Visual Stack -->
+            <div class="space-y-2.5">
+              <!-- Tier 1 -->
+              <div class="p-3 rounded-xl border border-slate-200 bg-white flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                  <div class="w-7 h-7 rounded-lg bg-slate-100 text-slate-700 font-bold text-xs flex items-center justify-center font-mono-num">T1</div>
+                  <div>
+                    <span class="text-xs font-bold text-slate-900 block">Tier 1: Classical Ed25519 (RFC 8032)</span>
+                    <span id="pqc-t1-status" class="text-[11px] text-slate-500">Fast 128-bit classical curve signature.</span>
+                  </div>
+                </div>
+                <span id="pqc-t1-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">VALID</span>
+              </div>
+
+              <!-- Tier 2 -->
+              <div class="p-3 rounded-xl border border-slate-200 bg-white flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                  <div class="w-7 h-7 rounded-lg bg-indigo-50 text-indigo-700 font-bold text-xs flex items-center justify-center font-mono-num">T2</div>
+                  <div>
+                    <span class="text-xs font-bold text-slate-900 block">Tier 2: Post-Quantum Lattice (NIST FIPS 204 ML-DSA)</span>
+                    <span id="pqc-t2-status" class="text-[11px] text-slate-500">M-LWE Module Lattices (128-bit Post-Quantum Hardness).</span>
+                  </div>
+                </div>
+                <span id="pqc-t2-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">SECURE</span>
+              </div>
+
+              <!-- Tier 3 -->
+              <div class="p-3 rounded-xl border border-slate-200 bg-white flex items-center justify-between">
+                <div class="flex items-center space-x-3">
+                  <div class="w-7 h-7 rounded-lg bg-emerald-50 text-emerald-700 font-bold text-xs flex items-center justify-center font-mono-num">T3</div>
+                  <div>
+                    <span class="text-xs font-bold text-slate-900 block">Tier 3: Quantum Physical Digital Signature (QDS Pauli MUBs)</span>
+                    <span id="pqc-t3-status" class="text-[11px] text-slate-500">No-Cloning Wavefunction Collapse (Information-Theoretic).</span>
+                  </div>
+                </div>
+                <span id="pqc-t3-badge" class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">AUTHENTIC</span>
+              </div>
+            </div>
+
+            <!-- Composite Envelope JSON Inspector -->
+            <details class="text-[11px] group rounded-xl border border-slate-200 bg-slate-50 p-2.5">
+              <summary class="font-semibold text-slate-700 cursor-pointer flex items-center justify-between select-none">
+                <span>View Full 3-Tier Hybrid Signature Envelope JSON</span>
+                <span id="pqc-comp-hash" class="font-mono-num text-[10px] text-slate-500">0x...</span>
+              </summary>
+              <pre id="pqc-envelope-json" class="mt-2 pt-2 border-t border-slate-200 font-mono-num text-[10px] bg-slate-900 text-slate-200 p-2.5 rounded-lg overflow-x-auto max-h-40">Execute hybrid verification to view signed envelope.</pre>
+            </details>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
+    <!-- TAB: CYBER SOC TELEMETRY & ACTIVE DEFENSE PLAYBOOKS      -->
+    <!-- ======================================================== -->
+    <div id="tab-soc" class="hidden space-y-6">
+      <div class="q-card p-5">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="w-3 h-3 rounded-full bg-amber-500 dot-pulse"></span>
+              <h2 class="text-base font-bold text-slate-900">Enterprise SOC Telemetry &amp; Zero-Trust Active Defense</h2>
+              <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200 uppercase">SIEM &amp; Zero-Trust Firewall</span>
+            </div>
+            <p class="text-xs text-slate-500 mt-1">Real-time ArcSight Common Event Format (CEF) syslog streams, OASIS STIX 2.1 Threat Intel bundles, and automated containment rule generation for Linux iptables, Cisco ACLs, and SDN OpenFlow controllers.</p>
+          </div>
+          <button onclick="refreshSOCTelemetry()" class="px-3 py-1.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 font-semibold text-xs transition border border-amber-200 flex items-center space-x-1.5">
+            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            <span>Refresh SOC Stream</span>
+          </button>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 mt-5">
+          <!-- Left: SIEM CEF Log Stream & STIX 2.1 (6 cols) -->
+          <div class="lg:col-span-6 space-y-4">
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="text-xs font-bold text-slate-900">ArcSight Common Event Format (CEF / RFC 5424):</label>
+                <button onclick="copyCEFLog()" class="text-[10px] text-indigo-600 hover:text-indigo-800 font-semibold">Copy CEF Log</button>
+              </div>
+              <div class="bg-slate-900 text-emerald-400 font-mono-num text-[11px] p-3 rounded-xl overflow-x-auto">
+                <pre id="soc-cef-text">Loading CEF syslog stream...</pre>
+              </div>
+              <span class="text-[10px] text-slate-500 mt-1 block">Compatible with Splunk Enterprise Security, Elastic SIEM, Microsoft Sentinel, IBM QRadar.</span>
+            </div>
+
+            <div>
+              <div class="flex items-center justify-between mb-1.5">
+                <label class="text-xs font-bold text-slate-900">OASIS STIX 2.1 Cyber Threat Intel (CTI) Bundle:</label>
+                <button onclick="copySTIXBundle()" class="text-[10px] text-indigo-600 hover:text-indigo-800 font-semibold">Copy STIX JSON</button>
+              </div>
+              <div class="bg-slate-900 text-cyan-300 font-mono-num text-[10px] p-3 rounded-xl overflow-x-auto max-h-56">
+                <pre id="soc-stix-text">Loading STIX 2.1 intelligence bundle...</pre>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Automated Firewall Rules & Containment Playbook (6 cols) -->
+          <div class="lg:col-span-6 space-y-4">
+            <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-3">
+              <div class="flex items-center justify-between pb-2 border-b border-slate-200">
+                <span class="text-xs font-bold text-slate-900">Automated Zero-Trust Firewall Playbook:</span>
+                <span id="soc-playbook-enforcement" class="text-[10px] font-bold px-2 py-0.5 rounded bg-rose-100 text-rose-800">ENFORCEMENT: ISOLATE</span>
+              </div>
+
+              <!-- Linux iptables -->
+              <div>
+                <span class="text-[11px] font-bold text-slate-700 block mb-1">Linux Netfilter iptables / nftables:</span>
+                <div class="bg-slate-900 text-amber-300 font-mono-num text-[10px] p-2.5 rounded-lg overflow-x-auto">
+                  <pre id="soc-iptables-text">sudo iptables -I INPUT -s 198.51.100.77 -j DROP</pre>
+                </div>
+              </div>
+
+              <!-- Cisco ACL -->
+              <div>
+                <span class="text-[11px] font-bold text-slate-700 block mb-1">Cisco IOS-XE Core Optical ACL:</span>
+                <div class="bg-slate-900 text-amber-300 font-mono-num text-[10px] p-2.5 rounded-lg overflow-x-auto">
+                  <pre id="soc-cisco-text">interface TenGigE0/1/0/4\n shutdown</pre>
+                </div>
+              </div>
+
+              <!-- NIST SP 800-61 Incident Handling Workflow -->
+              <div>
+                <span class="text-[11px] font-bold text-slate-700 block mb-1">NIST SP 800-61 Rev. 2 Incident Response Workflow:</span>
+                <div id="soc-nist-workflow" class="grid grid-cols-2 gap-1.5 text-[10px] font-mono-num">
+                  <!-- Populated dynamically -->
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ======================================================== -->
     <!-- TAB 2: 7-ATTACK THREAT DETECTION MATRIX                  -->
     <!-- ======================================================== -->
     <div id="tab-matrix" class="hidden space-y-4">
@@ -1423,6 +1651,42 @@
             </div>
           </div>
           <button onclick="resetAuditLedger()" class="px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs transition">Restore Ledger</button>
+        </div>
+
+        <!-- Live Blockchain Network & Cost Estimator Bar -->
+        <div class="mt-4 p-3.5 rounded-xl border border-slate-200 bg-slate-50 flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div class="flex items-center space-x-3">
+            <div class="w-8 h-8 rounded-lg bg-indigo-600 text-white flex items-center justify-center font-bold text-xs shrink-0">Web3</div>
+            <div>
+              <span class="text-xs font-bold text-slate-800 block">Anchor Network &amp; Budget Estimator (Max $1.00 Budget):</span>
+              <span id="blockchain-budget-indicator" class="text-[11px] text-emerald-700 font-medium">Selected: Polygon Amoy Testnet &bull; Cost: $0.0000 USD (100% Free with Faucet)</span>
+            </div>
+          </div>
+          <div class="flex items-center space-x-2">
+            <select id="select-blockchain-network" onchange="onBlockchainNetworkChanged(this.value)" class="text-xs p-2 rounded-lg border border-slate-300 bg-white font-medium text-slate-700">
+              <option value="POLYGON_AMOY_TESTNET">Polygon Amoy Testnet ($0.00 / Free)</option>
+              <option value="ETHEREUM_SEPOLIA_TESTNET">Ethereum Sepolia Testnet ($0.00 / Free)</option>
+              <option value="LOCAL_EVM_SIMULATOR">Local Simulated EVM ($0.00 / Free)</option>
+              <option value="POLYGON_POS_MAINNET">Polygon PoS Mainnet (~$0.0035 / tx - 280+ txs for $1)</option>
+            </select>
+            <button onclick="broadcastCurrentAnchorToChain()" id="btn-broadcast-chain" class="px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs transition flex items-center space-x-1 shrink-0 shadow-xs">
+              <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+              <span>Broadcast Anchor</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Live Broadcast Receipt Container -->
+        <div id="chain-broadcast-receipt" class="hidden mt-3 p-3 rounded-xl border border-indigo-200 bg-indigo-50/50 text-xs space-y-1 font-mono-num">
+          <div class="flex items-center justify-between font-bold text-indigo-900">
+            <span>EVM Transaction Receipt:</span>
+            <span id="chain-receipt-status" class="text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded text-[10px]">SUCCESS (0x1)</span>
+          </div>
+          <div class="text-[11px] text-slate-700">Tx Hash: <span id="chain-receipt-txhash" class="text-indigo-600 break-all font-bold">0x...</span></div>
+          <div class="text-[11px] text-slate-600 flex justify-between">
+            <span>Gas Used: <strong id="chain-receipt-gas">68,420</strong></span>
+            <span>Fee: <strong id="chain-receipt-fee">$0.0000 USD</strong></span>
+          </div>
         </div>
 
         <div class="mt-3 overflow-x-auto">
@@ -1694,7 +1958,7 @@
 
     // Tab Navigation
     function switchTab(tabId) {
-      const tabs = ['command-center', 'adversary', 'explain', 'matrix', 'benchmarks', 'theory', 'ledger', 'noise', 'multiparty'];
+      const tabs = ['command-center', 'adversary', 'explain', 'pqc', 'soc', 'matrix', 'benchmarks', 'theory', 'ledger', 'noise', 'multiparty'];
       tabs.forEach(t => {
         const el = document.getElementById(`tab-${t}`);
         const btn = document.getElementById(`tab-btn-${t}`);
@@ -1711,6 +1975,8 @@
 
       if (tabId === 'adversary') initAdversaryStudio();
       if (tabId === 'explain' && lastSimResult) updateExplanationPage(lastSimResult);
+      if (tabId === 'pqc') initPQCStudio();
+      if (tabId === 'soc') refreshSOCTelemetry();
       if (tabId === 'matrix') fetchAttackMatrix();
       if (tabId === 'benchmarks') fetchBenchmarks();
       if (tabId === 'theory') fetchSecurityReport();
@@ -3226,6 +3492,274 @@
       } finally {
         btn.innerText = "Execute Multi-Party Signature (Alice → Bob & Charlie)";
         btn.disabled = false;
+      }
+    }
+
+    // ==========================================
+    // HIGH-LEVEL BLOCKCHAIN & GAS COST CONTROLLER
+    // ==========================================
+    let currentSelectedChain = "POLYGON_AMOY_TESTNET";
+
+    async function onBlockchainNetworkChanged(netId) {
+      currentSelectedChain = netId;
+      try {
+        const res = await fetch(`/api/blockchain/estimate-gas?network_id=${netId}`);
+        if (!res.ok) throw new Error("Gas estimation failed");
+        const data = await res.json();
+        const indicator = document.getElementById('blockchain-budget-indicator');
+        if (indicator) {
+          if (data.is_free_testnet) {
+            indicator.innerText = `Selected: ${data.network_name} • Cost: $${data.estimated_cost_usd.toFixed(4)} USD (100% Free Faucet)`;
+            indicator.className = "text-[11px] text-emerald-700 font-medium";
+          } else {
+            indicator.innerText = `Selected: ${data.network_name} • Fee: $${data.estimated_cost_usd.toFixed(4)} USD (${data.budget_compliance.transactions_affordable_for_one_dollar}+ txs per $1.00 Budget!)`;
+            indicator.className = "text-[11px] text-indigo-700 font-bold";
+          }
+        }
+      } catch (err) {
+        console.error("Network gas estimate error:", err);
+      }
+    }
+
+    async function broadcastCurrentAnchorToChain() {
+      const btn = document.getElementById('btn-broadcast-chain');
+      if (btn) btn.disabled = true;
+      showToast("Broadcasting anchor proof to EVM smart contract...", "info");
+
+      const qber = lastSimResult?.qber_analysis?.qber ?? 0.012;
+      const sVal = lastSimResult?.chsh?.S_value ?? 2.812;
+      const dec = lastSimResult?.decision?.decision ?? "ACCEPTED";
+      const enf = lastSimResult?.decision?.enforcement_level ?? "MONITOR";
+      const sid = lastSimResult?.session_id ?? `SESS-BC-${Date.now()}`;
+      const msgHash = lastSimResult?.original_message ?
+        "0x" + lastSimResult.original_message.substring(0, 32) :
+        "0x845f748ef27a58c0e9c815e6a29e8500a103959c110fdeb62e31e349f05dfe4c";
+
+      try {
+        const res = await fetch('/api/blockchain/anchor-simulation', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            session_id: sid,
+            message_hash: msgHash,
+            merkle_root: "0x3fca91b72a819ec4b5d6f8314e1a0b5c7e8d9a2b1c4e6f8a9b0c2d3e4f5a6b7c",
+            block_hash: "0x9a8b7c6d5e4f3a2b1c0d9e8f7a6b5c4d3e2f1a0b9c8d7e6f5a4b3c2d1e0f9a8b",
+            qber: qber,
+            chsh_s: sVal,
+            decision: dec,
+            enforcement_level: enf,
+            network_id: currentSelectedChain
+          })
+        });
+
+        if (!res.ok) throw new Error(await res.text());
+        const data = await res.json();
+        const rcpt = data.transaction_receipt;
+
+        const box = document.getElementById('chain-broadcast-receipt');
+        if (box) box.classList.remove('hidden');
+
+        document.getElementById('chain-receipt-status').innerText = rcpt.status;
+        document.getElementById('chain-receipt-status').className = rcpt.contract_reverted ?
+          "text-rose-700 bg-rose-100 px-2 py-0.5 rounded text-[10px]" :
+          "text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded text-[10px]";
+        document.getElementById('chain-receipt-txhash').innerText = rcpt.transaction_hash;
+        document.getElementById('chain-receipt-gas').innerText = rcpt.gas_used.toLocaleString();
+        document.getElementById('chain-receipt-fee').innerText = `$${rcpt.transaction_fee_usd.toFixed(4)} USD (${currentSelectedChain})`;
+
+        if (rcpt.contract_reverted) {
+          showToast(`EVM Reverted: ${rcpt.revert_reason}`, "error");
+        } else {
+          showToast(`EVM Block Anchored! Tx: ${rcpt.transaction_hash.substring(0, 16)}...`, "success");
+        }
+        fetchAuditLedger();
+      } catch (err) {
+        showToast("Broadcast error: " + err.message, "error");
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    // ==========================================
+    // POST-QUANTUM CRYPTOGRAPHY (PQC) CONTROLLER
+    // ==========================================
+    function initPQCStudio() {
+      runHybridPQCExecution();
+    }
+
+    async function runHybridPQCExecution() {
+      const caseId = document.getElementById('pqc-select-case')?.value || "SWIFT_WIRE_TRANSFER";
+      const isTampered = Boolean(document.getElementById('pqc-toggle-tamper')?.checked);
+      const isShor = Boolean(document.getElementById('toggle-shor-attack')?.checked);
+
+      const btn = document.getElementById('btn-run-pqc');
+      if (btn) btn.disabled = true;
+
+      try {
+        // 1. Sign hybrid
+        const signRes = await fetch('/api/pqc/sign-hybrid', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ test_case_id: caseId, tamper_payload: isTampered })
+        });
+        if (!signRes.ok) throw new Error(await signRes.text());
+        const signData = await signRes.json();
+
+        // 2. Verify hybrid
+        const verifyRes = await fetch('/api/pqc/verify-hybrid', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            test_case_id: caseId,
+            tamper_payload: isTampered,
+            simulate_shor_quantum_attack: isShor,
+            envelope: signData.hybrid_envelope
+          })
+        });
+        if (!verifyRes.ok) throw new Error(await verifyRes.text());
+        const verifyData = await verifyRes.json();
+        const vResult = verifyData.verification_result;
+
+        // Render PQC View
+        const banner = document.getElementById('pqc-verdict-banner');
+        const vBadge = document.getElementById('pqc-verdict-badge');
+        const vTitle = document.getElementById('pqc-verdict-title');
+        const vDesc = document.getElementById('pqc-verdict-desc');
+        const rBadge = document.getElementById('pqc-resilience-badge');
+
+        if (vResult.overall_valid) {
+          if (banner) banner.className = "p-4 rounded-2xl border border-emerald-200 bg-emerald-50/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3";
+          if (vBadge) {
+            vBadge.className = "px-2 py-0.5 text-[10px] font-bold rounded uppercase bg-emerald-100 text-emerald-800";
+            vBadge.innerText = isShor ? "QUANTUM-RESILIENT (PQC LATTICE SHIELD)" : "UNCONDITIONALLY SECURE";
+          }
+          if (vTitle) vTitle.innerText = isShor ? "Shor's Attack Neutralized by ML-DSA" : "3-Tier Hybrid Defense Verified";
+          if (rBadge) {
+            rBadge.innerText = isShor ? "FTQC SURVIVED" : "SNDL IMMUNE";
+            rBadge.className = "text-xs font-black font-mono-num px-2.5 py-1 rounded-lg bg-emerald-600 text-white shrink-0";
+          }
+        } else {
+          if (banner) banner.className = "p-4 rounded-2xl border border-rose-200 bg-rose-50/50 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3";
+          if (vBadge) {
+            vBadge.className = "px-2 py-0.5 text-[10px] font-bold rounded uppercase bg-rose-100 text-rose-800";
+            vBadge.innerText = "DIGEST CORRUPTED";
+          }
+          if (vTitle) vTitle.innerText = "Tampered Payload Blocked Across All Tiers";
+          if (rBadge) {
+            rBadge.innerText = "FORGERY REJECTED";
+            rBadge.className = "text-xs font-black font-mono-num px-2.5 py-1 rounded-lg bg-rose-600 text-white shrink-0";
+          }
+        }
+        if (vDesc) vDesc.innerText = vResult.architectural_recommendation;
+
+        // T1
+        document.getElementById('pqc-t1-status').innerText = vResult.tier1_classical.status;
+        document.getElementById('pqc-t1-badge').innerText = vResult.tier1_classical.valid ? "VALID" : "COMPROMISED";
+        document.getElementById('pqc-t1-badge').className = vResult.tier1_classical.valid ?
+          "px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800" :
+          "px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800";
+
+        // T2
+        document.getElementById('pqc-t2-status').innerText = vResult.tier2_post_quantum_lattice.status;
+        document.getElementById('pqc-t2-badge').innerText = vResult.tier2_post_quantum_lattice.valid ? "SECURE" : "CORRUPTED";
+        document.getElementById('pqc-t2-badge').className = vResult.tier2_post_quantum_lattice.valid ?
+          "px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800" :
+          "px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800";
+
+        // T3
+        document.getElementById('pqc-t3-status').innerText = vResult.tier3_quantum_physics.status;
+        document.getElementById('pqc-t3-badge').innerText = vResult.tier3_quantum_physics.valid ? "AUTHENTIC" : "COLLAPSED";
+        document.getElementById('pqc-t3-badge').className = vResult.tier3_quantum_physics.valid ?
+          "px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800" :
+          "px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800";
+
+        // JSON
+        document.getElementById('pqc-comp-hash').innerText = signData.hybrid_envelope.composite_signature_hash.substring(0, 18) + "...";
+        document.getElementById('pqc-envelope-json').innerText = JSON.stringify(signData.hybrid_envelope, null, 2);
+
+        showToast("Hybrid PQC verification evaluated", vResult.overall_valid ? "success" : "error");
+      } catch (err) {
+        showToast("PQC error: " + err.message, "error");
+      } finally {
+        if (btn) btn.disabled = false;
+      }
+    }
+
+    // ==========================================
+    // CYBER SOC & ZERO-TRUST ACTIVE DEFENSE
+    // ==========================================
+    let cachedCEFLog = "";
+    let cachedSTIXBundle = "";
+
+    async function refreshSOCTelemetry() {
+      try {
+        const sid = lastSimResult?.session_id ?? "SESS-LIVE-SOC";
+        const atk = lastSimResult?.attack_type ?? "INTERCEPT_RESEND";
+        const enf = lastSimResult?.decision?.enforcement_level ?? "ISOLATE";
+        const qber = lastSimResult?.qber_analysis?.qber ?? 0.25;
+        const sVal = lastSimResult?.chsh?.S_value ?? 2.012;
+
+        // 1. CEF Log
+        const cefRes = await fetch(`/api/soc/cef-stream?session_id=${sid}&threat_type=${atk}&enforcement_level=${enf}&qber=${qber}&chsh_s=${sVal}`);
+        if (cefRes.ok) {
+          const cefData = await cefRes.json();
+          cachedCEFLog = cefData.cef_raw_log;
+          document.getElementById('soc-cef-text').innerText = cefData.cef_raw_log;
+        }
+
+        // 2. STIX 2.1
+        const stixRes = await fetch(`/api/soc/stix-bundle?attack_type=${atk}&session_id=${sid}`);
+        if (stixRes.ok) {
+          const stixData = await stixRes.json();
+          cachedSTIXBundle = JSON.stringify(stixData, null, 2);
+          document.getElementById('soc-stix-text').innerText = cachedSTIXBundle;
+        }
+
+        // 3. Active Defense Firewall Rules
+        const fwRes = await fetch('/api/soc/active-defense', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            session_id: sid,
+            threat_type: atk,
+            enforcement_level: enf,
+            adversary_ip: "198.51.100.77",
+            affected_optical_port: "TenGigE0/1/0/4"
+          })
+        });
+        if (fwRes.ok) {
+          const fwData = await fwRes.json();
+          document.getElementById('soc-playbook-enforcement').innerText = `ENFORCEMENT: ${fwData.enforcement_level}`;
+          document.getElementById('soc-iptables-text').innerText = fwData.iptables_commands.join('\n');
+          document.getElementById('soc-cisco-text').innerText = fwData.cisco_acl_commands.join('\n');
+
+          const wfContainer = document.getElementById('soc-nist-workflow');
+          if (wfContainer && fwData.incident_playbook_nist_sp800_61) {
+            wfContainer.innerHTML = '';
+            fwData.incident_playbook_nist_sp800_61.forEach(step => {
+              const div = document.createElement('div');
+              div.className = "p-1.5 rounded bg-white border border-slate-200";
+              div.innerHTML = `<strong class="text-slate-800">${step.step}. ${step.phase}:</strong> <span class="text-slate-600">${step.action}</span>`;
+              wfContainer.appendChild(div);
+            });
+          }
+        }
+      } catch (err) {
+        console.error("SOC telemetry error:", err);
+      }
+    }
+
+    function copyCEFLog() {
+      if (cachedCEFLog) {
+        navigator.clipboard.writeText(cachedCEFLog);
+        showToast("ArcSight CEF log copied to clipboard!", "success");
+      }
+    }
+
+    function copySTIXBundle() {
+      if (cachedSTIXBundle) {
+        navigator.clipboard.writeText(cachedSTIXBundle);
+        showToast("OASIS STIX 2.1 Threat Intel bundle copied!", "success");
       }
     }
 

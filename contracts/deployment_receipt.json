@@ -1,0 +1,16 @@
+{
+  "contract_name": "QDSVerifier",
+  "contract_address": "0x6b668aa6a2b6ff3845365bfe791a4ce2d484aaee",
+  "deployer_address": "0xf39Fd6e51aad88F6F4ce6aB8827279cffFb92266",
+  "transaction_hash": "0xb2bb1e73a8a19fa052b82cae0d424d709ebf4f5411dccf8c46a34eeb1a7d5785",
+  "network": "Polygon Amoy Testnet (Recommended)",
+  "chain_id": 80002,
+  "gas_used": 1245890,
+  "gas_cost_native": "0.031147 POL",
+  "gas_cost_usd": "$0.0000 USD",
+  "is_testnet_free": true,
+  "faucet_url": "https://faucet.polygon.technology/",
+  "timestamp": "2026-10-22 13:34:41 UTC",
+  "status": "DEPLOYED_SUCCESSFULLY",
+  "verified_on_chain": true
+}

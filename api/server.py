@@ -26,7 +26,10 @@ from api.routers import (
     attacks_router,
     ledger_router,
     circuit_router,
-    auth_router
+    auth_router,
+    blockchain_router,
+    pqc_router,
+    soc_router
 )
 
 # Export simulator for backward compatibility with external scripts/tests
@@ -65,6 +68,9 @@ app.include_router(attacks_router)
 app.include_router(ledger_router)
 app.include_router(circuit_router)
 app.include_router(auth_router)
+app.include_router(blockchain_router)
+app.include_router(pqc_router)
+app.include_router(soc_router)
 
 # Mount Static Dashboard Files
 static_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', 'static'))
