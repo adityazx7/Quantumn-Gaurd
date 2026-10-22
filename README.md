@@ -24,6 +24,10 @@ Problem Statement 26141 from **Egreen Quanta LLP** strictly prohibits artificial
 
 For the exhaustive mathematical and component-by-component manual, see [PROJECT_COMPLETE_GUIDE.md](PROJECT_COMPLETE_GUIDE.md).
 
+### Comprehensive Engineering & Research Reports:
+- **[QUANTUMGUARD_IN_DEPTH_PROJECT_REPORT.md](QUANTUMGUARD_IN_DEPTH_PROJECT_REPORT.md)**: Exhaustive engineering report covering Information-Theoretic Security, NIST FIPS 204/205 PQC, EVM Smart Contract verification, Binary Merkle Trees, MITRE ATT&CK Adversary Simulator, and SOC Playbooks.
+- **[RESEARCH_REPORT.md](RESEARCH_REPORT.md)**: Cloud API key assessment (IBM Quantum, Web3 RPCs) and zero-cost / sub-cent gas budget verification (< $1.00 max).
+
 ---
 
 ## 2. Quickstart: How to Download & Run
